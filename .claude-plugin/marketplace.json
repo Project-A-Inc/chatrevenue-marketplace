@@ -8,16 +8,6 @@
   },
   "plugins": [
     {
-      "name": "chatrevenue-hello",
-      "description": "Minimal hello-world plugin that adds the /hello slash command.",
-      "author": {
-        "name": "ChatRevenue"
-      },
-      "category": "demo",
-      "source": "./plugins/chatrevenue-hello",
-      "homepage": "https://github.com/Project-A-Inc/chatrevenue-marketplace"
-    },
-    {
       "name": "chatrevenue",
       "description": "ChatRevenue skills bundle for sales reps: memory queries, watcher-fired activity help, ICP lead-generation assistant.",
       "author": {

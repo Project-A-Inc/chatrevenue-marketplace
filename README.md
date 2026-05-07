@@ -1,8 +1,6 @@
 # chatrevenue-marketplace
 
-Sample Cowork-compatible plugin marketplace from ChatRevenue.
-
-This repo is a learning artefact — it lets us understand how Claude Cowork actually fetches and installs marketplaces by hand-rolling the canonical Git-based format that Cowork expects.
+Cowork-compatible plugin marketplace from ChatRevenue. Distributes the ChatRevenue skills bundle as an alternative to the per-skill install flow inside the [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor) (Settings → Cowork → Skills).
 
 ## Add to Cowork
 
@@ -12,8 +10,7 @@ This repo is a learning artefact — it lets us understand how Claude Cowork act
    Project-A-Inc/chatrevenue-marketplace
    ```
 3. Sign in to GitHub when prompted (Cowork uses GitHub OAuth to fetch repos).
-
-After it loads, install **chatrevenue-hello** and run `/hello` in any session.
+4. Find **chatrevenue** in the listing → **Install**.
 
 ## Repo layout
 
@@ -22,11 +19,6 @@ After it loads, install **chatrevenue-hello** and run `/hello` in any session.
 ├── .claude-plugin/
 │   └── marketplace.json              # marketplace manifest (Cowork reads this)
 └── plugins/
-    ├── chatrevenue-hello/
-    │   ├── .claude-plugin/plugin.json
-    │   ├── commands/hello.md         # the /hello slash command
-    │   ├── skills/hello/SKILL.md
-    │   └── README.md
     └── chatrevenue/
         ├── .claude-plugin/plugin.json
         ├── skills/
@@ -40,7 +32,6 @@ After it loads, install **chatrevenue-hello** and run `/hello` in any session.
 
 | Plugin | What it does |
 |---|---|
-| `chatrevenue-hello` | Minimal hello-world; adds the `/hello` slash command. |
 | `chatrevenue` | Three sales-rep skills: `chatrevenue-memory` (screen-memory queries), `chatrevenue-help-with-current-activity` (watcher-fired activity help), `chatrevenue-icp-lead-gen` (ICP lead-generation assistant — standalone). The first two need the [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor) running for the MCP server they call. |
 
 ## License
