@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "chatrevenue-marketplace",
+  "description": "Sample Cowork-compatible plugin marketplace from ChatRevenue, used to learn the marketplace mechanics.",
+  "owner": {
+    "name": "ChatRevenue",
+    "email": "oleksandr.ieremchuk@chatrevenue.ai"
+  },
+  "plugins": [
+    {
+      "name": "chatrevenue-hello",
+      "description": "Minimal hello-world plugin that adds the /hello slash command.",
+      "author": {
+        "name": "ChatRevenue"
+      },
+      "category": "demo",
+      "source": "./plugins/chatrevenue-hello",
+      "homepage": "https://github.com/oleksandr-ieremchuk/chatrevenue-marketplace"
+    }
+  ]
+}

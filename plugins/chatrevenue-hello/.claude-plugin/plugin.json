@@ -1,0 +1,8 @@
+{
+  "name": "chatrevenue-hello",
+  "description": "Minimal hello-world plugin that adds the /hello slash command. Used to validate Cowork's plugin install mechanics.",
+  "author": {
+    "name": "ChatRevenue",
+    "email": "oleksandr.ieremchuk@chatrevenue.ai"
+  }
+}
