@@ -1,0 +1,654 @@
+<!--
+  Calendar Analysis vs SaaS Benchmark — Cowork Artifact Template
+  --------------------------------------------------------------
+  This file is meant to be uploaded into a Cowork chat with Claude.
+  Claude will substitute the three placeholders below and create the
+  artifact in your Cowork workspace.
+
+  PLACEHOLDERS TO REPLACE before creating the artifact:
+    {{USER_EMAIL}}        — the user's primary email (e.g. jane.doe@company.com)
+    {{USER_DOMAIN}}       — the company domain (e.g. company.com) — used to detect external attendees
+    {{OUTLOOK_TOOL_NAME}} — the fully-qualified MCP tool name for Outlook calendar search
+                            (typically: mcp__<server-id>__outlook_calendar_search)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calendar Analysis vs SaaS Benchmark</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; background: transparent; font-size: 14px; }
+h1 { font-size: 22px; margin: 0 0 4px 0; font-weight: 700; }
+.subtitle { color: #666; font-size: 13px; margin-bottom: 18px; }
+.controls { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+.controls select, .controls button { padding: 7px 12px; border: 1px solid #d0d0d0; border-radius: 6px; background: #fff; font-size: 13px; cursor: pointer; }
+.controls button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.controls button.ghost { background: #fff; color: #2563eb; border-color: #2563eb; }
+.controls button:disabled { opacity: 0.5; cursor: wait; }
+.status { color: #888; font-size: 12px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.kpi { background: #f7f7f8; border: 1px solid #ececef; border-radius: 8px; padding: 12px 14px; }
+.kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 4px; }
+.kpi-value { font-size: 22px; font-weight: 700; color: #111; }
+.kpi-sub { font-size: 11px; color: #888; margin-top: 2px; }
+.kpi.warn .kpi-value { color: #d97706; }
+.kpi.bad .kpi-value { color: #dc2626; }
+.kpi.good .kpi-value { color: #059669; }
+.section { background: #fff; border: 1px solid #ececef; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.section h2 { font-size: 15px; margin: 0 0 12px 0; font-weight: 600; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .row { grid-template-columns: 1fr; } }
+.chart-wrap { position: relative; height: 280px; }
+.chart-wrap.tall { height: 320px; }
+.bench-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.bench-label { width: 160px; flex-shrink: 0; }
+.bench-bar-wrap { flex: 1; background: #f0f0f3; height: 14px; border-radius: 7px; position: relative; overflow: visible; }
+.bench-bar-actual { height: 100%; background: #2563eb; border-radius: 7px; transition: width 0.4s; }
+.bench-bar-target { position: absolute; top: -2px; bottom: -2px; border-left: 2px dashed #16a34a; border-right: 2px dashed #16a34a; background: rgba(22,163,74,0.08); }
+.bench-pct { width: 60px; text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
+.bench-verdict { width: 130px; font-size: 11px; }
+.bench-verdict.low { color: #d97706; }
+.bench-verdict.high { color: #dc2626; }
+.bench-verdict.ok { color: #059669; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #ececef; font-weight: 600; color: #555; }
+table td { padding: 6px 8px; border-bottom: 1px solid #f5f5f7; }
+.heatmap { display: grid; grid-template-columns: 50px repeat(5, 1fr); gap: 2px; }
+.heatmap-header { font-size: 11px; text-align: center; color: #666; padding: 4px 0; font-weight: 600; }
+.heatmap-time { font-size: 10px; color: #888; padding: 2px 4px; text-align: right; }
+.heatmap-cell { aspect-ratio: 2/1; background: #f0f0f3; border-radius: 3px; min-height: 18px; }
+.error { color: #dc2626; padding: 12px; background: #fef2f2; border-radius: 6px; margin-bottom: 12px; }
+.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+.role-note { background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; border-radius: 4px; font-size: 12px; margin-bottom: 16px; }
+.season-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.season-card { padding: 10px 12px; border-radius: 8px; background: #f7f7f8; border: 1px solid #ececef; }
+.season-card.up { border-left: 3px solid #059669; }
+.season-card.down { border-left: 3px solid #dc2626; }
+.season-card.flat { border-left: 3px solid #9ca3af; }
+.season-card-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.4px; }
+.season-card-value { font-size: 18px; font-weight: 700; margin-top: 3px; }
+.season-card-sub { font-size: 11px; color: #888; margin-top: 2px; }
+.history-pill { display: inline-block; padding: 3px 9px; border-radius: 999px; background: #eef2ff; color: #4338ca; font-size: 11px; margin-left: 8px; }
+.history-pill.stale { background: #fef3c7; color: #92400e; }
+.progress-bar { height: 6px; background: #f0f0f3; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.progress-bar-fill { height: 100%; background: #2563eb; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<h1>Calendar Analysis vs SaaS Benchmark <span id="historyPill" class="history-pill" style="display:none"></span></h1>
+<div class="subtitle" id="subtitle">Loading...</div>
+
+<div class="controls">
+  <label style="font-size:13px">Time period:</label>
+  <select id="period">
+    <option value="4">Last 4 weeks</option>
+    <option value="8">Last 8 weeks</option>
+    <option value="12" selected>Last 12 weeks (quarter)</option>
+  </select>
+  <button id="reloadBtn" class="primary">Refresh current period</button>
+  <button id="reloadHistBtn" class="ghost">Re-fetch year of history</button>
+  <span class="status" id="status"></span>
+</div>
+
+<div class="role-note" id="roleNote" style="display:none"></div>
+<div id="errorBox"></div>
+
+<div class="kpi-grid" id="kpiGrid"></div>
+
+<div class="section">
+  <h2>SaaS Sales IC benchmark comparison</h2>
+  <div style="font-size: 11px; color: #666; margin-bottom: 10px;">Blue bars: your actual % of working time. Green band: target range per Salesforce State of Sales / HubSpot / Pavilion benchmarks.</div>
+  <div id="benchTable"></div>
+</div>
+
+<div class="section" id="seasonSection" style="display:none">
+  <h2>Seasonality &mdash; 12 months of history <span id="seasonRange" style="font-weight:400;color:#888;font-size:12px"></span></h2>
+  <div style="font-size: 11px; color: #666; margin-bottom: 10px;">Workload shifts month over month. Cards below compare the current 12-week window vs. the same window one year ago.</div>
+  <div class="season-cards" id="seasonCards"></div>
+  <div class="chart-wrap tall"><canvas id="seasonChart"></canvas></div>
+</div>
+
+<div class="row">
+  <div class="section">
+    <h2>Time distribution by category</h2>
+    <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+  </div>
+  <div class="section">
+    <h2>Hours by day of week</h2>
+    <div class="chart-wrap"><canvas id="dowChart"></canvas></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Weekly structure (average hours)</h2>
+  <div style="font-size: 11px; color: #666; margin-bottom: 10px;">Hour slots 7:00 AM &ndash; 8:00 PM (UTC). Darker cells = more meetings at that time.</div>
+  <div id="heatmap"></div>
+</div>
+
+<div class="section">
+  <h2>Top 15 meeting types (current period)</h2>
+  <table id="topMeetings">
+    <thead><tr><th>Meeting</th><th style="text-align:right">Count</th><th style="text-align:right">Hrs/week</th><th>Category</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Insights &amp; recommendations</h2>
+  <div id="insights" style="font-size: 13px; line-height: 1.6;"></div>
+</div>
+
+<script>
+// ============================================================================
+// REPLACE THESE THREE VALUES BEFORE CREATING THE ARTIFACT
+// ============================================================================
+const USER_EMAIL = '{{USER_EMAIL}}';
+const USER_DOMAIN = '{{USER_DOMAIN}}';
+const OUTLOOK_TOOL_NAME = '{{OUTLOOK_TOOL_NAME}}';
+// ============================================================================
+
+const HIST_CACHE_KEY = 'cal_year_history_v1';
+const HIST_TTL_DAYS = 7;
+
+const BENCHMARKS = [
+  { key: 'customer', label: 'Customer-facing', min: 40, max: 50, desc: 'Demos, discovery, customer calls' },
+  { key: 'prospecting', label: 'Prospecting', min: 15, max: 25, desc: 'Outbound, lead generation' },
+  { key: 'internal', label: 'Internal meetings', min: 5, max: 10, desc: 'Stand-ups, syncs, 1:1s' },
+  { key: 'admin', label: 'Admin / Planning', min: 10, max: 15, desc: 'CRM, planning, reviews' },
+  { key: 'training', label: 'Training / Coaching', min: 5, max: 10, desc: 'Workshops, learning' },
+];
+
+const CATEGORY_COLORS = {
+  customer: '#2563eb', prospecting: '#7c3aed', internal: '#dc2626',
+  cross_functional: '#f59e0b', admin: '#0891b2', training: '#059669',
+  focus: '#6366f1', pto: '#9ca3af', other: '#a3a3a3',
+};
+const CATEGORY_LABELS = {
+  customer: 'Customer-facing', prospecting: 'Prospecting', internal: 'Internal team',
+  cross_functional: 'Cross-functional', admin: 'Admin / Planning', training: 'Training',
+  focus: 'Focus / Solo', pto: 'PTO / Personal', other: 'Other',
+};
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY_NAMES_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAY_NAMES_LONG = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function categorize(ev) {
+  const subj = (ev.subject || '').toLowerCase();
+  const attendees = ev.attendees || [];
+  const hasExternal = attendees.some(a => a && !a.toLowerCase().includes(USER_DOMAIN));
+  const isPersonal = ev.showAs === 'oof' || (ev.categories && ev.categories.includes('Private'));
+
+  if (isPersonal) return 'pto';
+  if (ev.isCancelled) return 'other';
+  if (/\b(pto|vacation|holiday|out of office|bt to)\b/i.test(subj)) return 'pto';
+  if (/doctor|dentist/i.test(subj)) return 'pto';
+  if (/\b(demo (with|for|—)|discovery|prospect|customer call|sales call|pipeline review|forecast call)\b/i.test(subj)) return 'customer';
+  if (/user (testing|interview|research)|customer interview|client (call|meeting)/i.test(subj)) return 'customer';
+  if (hasExternal && !/\b(internal|team|standup|sync)\b/i.test(subj)) return 'customer';
+  if (/\b(prospecting|cold call|outbound|lead gen|outreach)\b/i.test(subj)) return 'prospecting';
+  if (/\b(workshop|training|onboarding|enablement|learning|course)\b/i.test(subj)) return 'training';
+  if (/\b(design|product|ux|grooming|planning|roadmap)\b/i.test(subj)) return 'cross_functional';
+  if (/\b(daily sync|stand[\s-]?up|weekly sync|team sync|engineering|retro|1:1|one[\s-]?on[\s-]?one|all[\s-]?hands)\b/i.test(subj)) return 'internal';
+  if (/\b(bug review|tickets?|review|status|update|reporting|demo \(weekly\)|backlog)\b/i.test(subj)) return 'admin';
+  if (attendees.length <= 1 && !hasExternal) return 'focus';
+  return 'other';
+}
+
+async function fetchEventsForRange(after, before) {
+  const all = [];
+  let offset = 0;
+  while (true) {
+    const res = await window.cowork.callMcpTool(OUTLOOK_TOOL_NAME, {
+      query: '*', afterDateTime: after, beforeDateTime: before, limit: 50, offset,
+    });
+    let items = [];
+    if (Array.isArray(res)) items = res;
+    else if (res && Array.isArray(res.content)) items = res.content.map(c => { try { return JSON.parse(c.text); } catch { return null; } }).filter(Boolean);
+    else if (res && Array.isArray(res.items)) items = res.items;
+    if (!items.length) break;
+    all.push(...items);
+    if (items.length < 50) break;
+    offset += 50;
+    if (offset > 500) break;
+  }
+  return all;
+}
+
+function fmtDate(d) { return d.toISOString().slice(0, 10); }
+function ymKey(d) { return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`; }
+
+function compressEvent(ev) {
+  const cat = categorize(ev);
+  return { s: ev.start, e: ev.end, c: cat, a: ev.isAllDay ? 1 : 0, x: ev.isCancelled ? 1 : 0, t: (ev.subject || '').slice(0, 80) };
+}
+function decompressEvent(c) {
+  return { start: c.s, end: c.e, cat: c.c, isAllDay: !!c.a, isCancelled: !!c.x, subject: c.t };
+}
+
+async function fetchRange(weeks, onProgress) {
+  const today = new Date();
+  const start = new Date(today.getTime() - weeks * 7 * 24 * 3600 * 1000);
+  const chunks = [];
+  let cur = new Date(start);
+  while (cur < today) {
+    const next = new Date(Math.min(today.getTime(), cur.getTime() + 14 * 24 * 3600 * 1000));
+    chunks.push([fmtDate(cur), fmtDate(next)]);
+    cur = next;
+  }
+  const all = [];
+  for (let i = 0; i < chunks.length; i++) {
+    if (onProgress) onProgress(i, chunks.length);
+    const events = await fetchEventsForRange(chunks[i][0], chunks[i][1]);
+    all.push(...events);
+  }
+  const seen = new Set();
+  return all.filter(e => { if (!e.id || seen.has(e.id)) return false; seen.add(e.id); return true; });
+}
+
+async function ensureHistory(forceRefresh) {
+  const status = document.getElementById('status');
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(HIST_CACHE_KEY) || 'null'); } catch {}
+  const isFresh = cached && cached.fetchedAt && (Date.now() - new Date(cached.fetchedAt).getTime()) < HIST_TTL_DAYS * 86400 * 1000;
+  if (isFresh && !forceRefresh) {
+    return { events: cached.events.map(decompressEvent), fetchedAt: cached.fetchedAt, cached: true };
+  }
+  status.innerHTML = 'Fetching one year of history (one-time, then cached)... <div class="progress-bar"><div class="progress-bar-fill" id="histProg" style="width:0%"></div></div>';
+  const events = await fetchRange(53, (i, n) => {
+    const pct = Math.round((i / n) * 100);
+    const bar = document.getElementById('histProg');
+    if (bar) bar.style.width = pct + '%';
+    status.firstChild && (status.childNodes[0].textContent = `Fetching year of history: chunk ${i+1}/${n}...`);
+  });
+  const compressed = events.map(compressEvent);
+  const payload = { fetchedAt: new Date().toISOString(), events: compressed };
+  try { localStorage.setItem(HIST_CACHE_KEY, JSON.stringify(payload)); } catch (e) {
+    console.warn('localStorage full, year cache not saved', e);
+  }
+  return { events: events.map(e => ({ start: e.start, end: e.end, cat: categorize(e), isAllDay: e.isAllDay, isCancelled: e.isCancelled, subject: e.subject })), fetchedAt: payload.fetchedAt, cached: false };
+}
+
+function eventDurationHours(ev) {
+  const start = new Date(ev.start);
+  const end = new Date(ev.end);
+  let hours = (end - start) / 3600000;
+  if (ev.isAllDay) {
+    const days = Math.max(1, Math.round(hours / 24));
+    hours = days * 8;
+  }
+  if (hours <= 0 || hours > 24 * 7) return 0;
+  return hours;
+}
+
+function analyze(events, weeks) {
+  const valid = events.filter(e => !e.isCancelled);
+  const byCat = {};
+  const byDow = [0,0,0,0,0,0,0];
+  const byHour = {};
+  const meetingTypes = {};
+  let totalHours = 0, allDayPto = 0;
+
+  for (const ev of valid) {
+    const hours = eventDurationHours(ev);
+    if (!hours) continue;
+    const cat = ev.cat || categorize(ev);
+    if (cat === 'pto' && ev.isAllDay) allDayPto += hours;
+    if (ev.isAllDay && cat !== 'pto') continue;
+    byCat[cat] = (byCat[cat] || 0) + hours;
+    totalHours += hours;
+    const start = new Date(ev.start);
+    const dow = (start.getUTCDay() + 6) % 7;
+    byDow[dow] += hours;
+    const hour = start.getUTCHours();
+    byHour[`${dow}_${hour}`] = (byHour[`${dow}_${hour}`] || 0) + hours;
+    let subj = (ev.subject || '(no subject)').replace(/^(canceled:|reschedule:)\s*/i, '').trim();
+    if (!meetingTypes[subj]) meetingTypes[subj] = { count: 0, hours: 0, cat };
+    meetingTypes[subj].count++;
+    meetingTypes[subj].hours += hours;
+  }
+  const workHours = totalHours - (byCat.pto || 0);
+  const pcts = {};
+  for (const [k, v] of Object.entries(byCat)) {
+    if (k === 'pto') continue;
+    pcts[k] = workHours > 0 ? (v / workHours) * 100 : 0;
+  }
+  return { totalHours, workHours, byCat, pcts, byDow, byHour, meetingTypes, allDayPto, weeks, eventCount: valid.length };
+}
+
+function analyzeMonthly(events) {
+  const byMonthCat = {}; const byMonthTotal = {};
+  for (const ev of events) {
+    if (ev.isCancelled) continue;
+    const hours = eventDurationHours(ev);
+    if (!hours) continue;
+    const cat = ev.cat || categorize(ev);
+    if (ev.isAllDay && cat !== 'pto') continue;
+    const m = ymKey(new Date(ev.start));
+    if (!byMonthCat[m]) byMonthCat[m] = {};
+    byMonthCat[m][cat] = (byMonthCat[m][cat] || 0) + hours;
+    byMonthTotal[m] = (byMonthTotal[m] || 0) + hours;
+  }
+  const months = Object.keys(byMonthCat).sort();
+  return { months, byMonthCat, byMonthTotal };
+}
+
+function compareYoY(historicalEvents, weeks) {
+  const today = new Date();
+  const curStart = new Date(today.getTime() - weeks * 7 * 86400 * 1000);
+  const yearAgoEnd = new Date(today); yearAgoEnd.setUTCFullYear(yearAgoEnd.getUTCFullYear() - 1);
+  const yearAgoStart = new Date(yearAgoEnd.getTime() - weeks * 7 * 86400 * 1000);
+  const curEvents = historicalEvents.filter(e => {
+    const t = new Date(e.start).getTime();
+    return t >= curStart.getTime() && t <= today.getTime();
+  });
+  const lyEvents = historicalEvents.filter(e => {
+    const t = new Date(e.start).getTime();
+    return t >= yearAgoStart.getTime() && t <= yearAgoEnd.getTime();
+  });
+  return { cur: analyze(curEvents, weeks), ly: analyze(lyEvents, weeks), curRange: [curStart, today], lyRange: [yearAgoStart, yearAgoEnd] };
+}
+
+let donutInst, dowInst, seasonInst;
+
+function renderRoleNote(a) {
+  const el = document.getElementById('roleNote');
+  const customerPct = a.pcts.customer || 0;
+  const prospectingPct = a.pcts.prospecting || 0;
+  const internalPct = (a.pcts.internal || 0) + (a.pcts.cross_functional || 0);
+  if (customerPct < 10 && prospectingPct < 5 && internalPct > 30) {
+    el.innerHTML = `<strong>&#9888; Role check:</strong> Your calendar doesn&rsquo;t look like a Sales IC profile &mdash; most meetings are internal (engineering syncs, design, grooming, bug review). This pattern fits a <strong>Product Manager / Engineering Lead</strong> role. The SaaS Sales IC benchmarks below are shown for reference only.`;
+    el.style.display = 'block';
+  } else { el.style.display = 'none'; }
+}
+
+function renderKpis(a) {
+  const grid = document.getElementById('kpiGrid');
+  const customerPct = (a.pcts.customer || 0).toFixed(0);
+  const internalPct = ((a.pcts.internal || 0) + (a.pcts.cross_functional || 0)).toFixed(0);
+  const hoursPerWeek = (a.workHours / a.weeks).toFixed(1);
+  const meetingsPerWeek = (a.eventCount / a.weeks).toFixed(0);
+  const customerHrsWeek = ((a.byCat.customer || 0) / a.weeks).toFixed(1);
+  const customerClass = customerPct < 20 ? 'bad' : customerPct < 40 ? 'warn' : 'good';
+  const internalClass = internalPct > 30 ? 'bad' : internalPct > 15 ? 'warn' : 'good';
+  const hoursClass = hoursPerWeek > 30 ? 'bad' : hoursPerWeek > 22 ? 'warn' : 'good';
+  grid.innerHTML = `
+    <div class="kpi"><div class="kpi-label">Meetings / week</div><div class="kpi-value">${meetingsPerWeek}</div><div class="kpi-sub">${a.eventCount} total over ${a.weeks} weeks</div></div>
+    <div class="kpi ${hoursClass}"><div class="kpi-label">Meeting hours / week</div><div class="kpi-value">${hoursPerWeek}h</div><div class="kpi-sub">Healthy: 18&ndash;22h</div></div>
+    <div class="kpi ${customerClass}"><div class="kpi-label">Customer-facing</div><div class="kpi-value">${customerPct}%</div><div class="kpi-sub">${customerHrsWeek}h/wk &bull; SaaS target 40&ndash;50%</div></div>
+    <div class="kpi ${internalClass}"><div class="kpi-label">Internal + cross-fn</div><div class="kpi-value">${internalPct}%</div><div class="kpi-sub">SaaS Sales target &le;15%</div></div>
+    <div class="kpi"><div class="kpi-label">PTO / Personal</div><div class="kpi-value">${(a.allDayPto/8).toFixed(0)}d</div><div class="kpi-sub">days in period</div></div>
+  `;
+}
+
+function renderBenchmarks(a) {
+  const div = document.getElementById('benchTable');
+  let html = '';
+  for (const b of BENCHMARKS) {
+    const actual = a.pcts[b.key] || 0;
+    const verdict = actual < b.min ? 'low' : actual > b.max ? 'high' : 'ok';
+    const verdictText = actual < b.min ? '&darr; below target' : actual > b.max ? '&uarr; above target' : '&check; on target';
+    const barW = Math.min(100, actual);
+    html += `<div class="bench-row">
+      <div class="bench-label" title="${b.desc}">${b.label}</div>
+      <div class="bench-bar-wrap">
+        <div class="bench-bar-target" style="left:${b.min}%;width:${b.max - b.min}%"></div>
+        <div class="bench-bar-actual" style="width:${barW}%"></div>
+      </div>
+      <div class="bench-pct">${actual.toFixed(0)}%</div>
+      <div class="bench-verdict ${verdict}">${verdictText}</div>
+    </div>`;
+  }
+  div.innerHTML = html;
+}
+
+function renderDonut(a) {
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  const cats = Object.keys(a.byCat).filter(k => k !== 'pto' && a.byCat[k] > 0);
+  const data = cats.map(k => a.byCat[k]);
+  const labels = cats.map(k => CATEGORY_LABELS[k] || k);
+  const colors = cats.map(k => CATEGORY_COLORS[k] || '#999');
+  if (donutInst) donutInst.destroy();
+  donutInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed.toFixed(1)}h (${(c.parsed/a.workHours*100).toFixed(0)}%)` } } } }
+  });
+}
+
+function renderDow(a) {
+  const ctx = document.getElementById('dowChart').getContext('2d');
+  const data = a.byDow.map(h => h / a.weeks);
+  if (dowInst) dowInst.destroy();
+  dowInst = new Chart(ctx, {
+    type: 'bar', data: { labels: DAY_NAMES_SHORT, datasets: [{ label: 'Hrs / week', data, backgroundColor: '#2563eb' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } } }
+  });
+}
+
+function renderHeatmap(a) {
+  const div = document.getElementById('heatmap');
+  const days = DAY_NAMES_SHORT.slice(0, 5);
+  const hours = []; for (let h = 7; h <= 20; h++) hours.push(h);
+  let max = 0;
+  for (const k of Object.keys(a.byHour)) max = Math.max(max, a.byHour[k]);
+  let html = '<div class="heatmap"><div></div>';
+  for (const d of days) html += `<div class="heatmap-header">${d}</div>`;
+  for (const h of hours) {
+    html += `<div class="heatmap-time">${h}:00</div>`;
+    for (let d = 0; d < 5; d++) {
+      const v = a.byHour[`${d}_${h}`] || 0;
+      const intensity = max > 0 ? v / max : 0;
+      const bg = intensity > 0 ? `rgba(37,99,235,${0.15 + intensity * 0.75})` : '#f0f0f3';
+      html += `<div class="heatmap-cell" style="background:${bg}" title="${v.toFixed(1)}h"></div>`;
+    }
+  }
+  html += '</div>';
+  div.innerHTML = html;
+}
+
+function renderTopMeetings(a) {
+  const tbody = document.querySelector('#topMeetings tbody');
+  const arr = Object.entries(a.meetingTypes).map(([k, v]) => ({ subj: k, ...v }));
+  arr.sort((a, b) => b.hours - a.hours);
+  const top = arr.slice(0, 15);
+  tbody.innerHTML = top.map(m => `<tr>
+    <td>${m.subj.replace(/</g,'&lt;')}</td>
+    <td style="text-align:right">${m.count}</td>
+    <td style="text-align:right">${(m.hours / a.weeks).toFixed(1)}</td>
+    <td><span class="legend-dot" style="background:${CATEGORY_COLORS[m.cat]}"></span>${CATEGORY_LABELS[m.cat]}</td>
+  </tr>`).join('');
+}
+
+function renderSeasonality(historyEvents, weeks) {
+  const sec = document.getElementById('seasonSection');
+  sec.style.display = 'block';
+  const m = analyzeMonthly(historyEvents);
+  const months = m.months;
+  const rangeLabel = months.length ? `(${months[0]} &rarr; ${months[months.length-1]})` : '';
+  document.getElementById('seasonRange').innerHTML = rangeLabel;
+
+  const stackKeys = ['customer','prospecting','cross_functional','internal','admin','training','focus'];
+  const datasets = stackKeys.map(k => ({
+    label: CATEGORY_LABELS[k] || k,
+    data: months.map(mm => (m.byMonthCat[mm] && m.byMonthCat[mm][k]) || 0),
+    backgroundColor: CATEGORY_COLORS[k] || '#999',
+  }));
+
+  const ctx = document.getElementById('seasonChart').getContext('2d');
+  if (seasonInst) seasonInst.destroy();
+  const labels = months.map(mm => {
+    const [y, mn] = mm.split('-');
+    return `${MONTH_NAMES[parseInt(mn)-1]} '${y.slice(2)}`;
+  });
+  seasonInst = new Chart(ctx, {
+    type: 'bar', data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10 } },
+        tooltip: { mode: 'index', intersect: false } },
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Hours / month' } } } }
+  });
+
+  const yoy = compareYoY(historyEvents, weeks);
+  const cards = document.getElementById('seasonCards');
+  const items = [
+    { key: 'customer', label: 'Customer-facing' },
+    { key: 'cross_functional', label: 'Cross-functional' },
+    { key: 'internal', label: 'Internal team' },
+    { key: 'admin', label: 'Admin / Planning' },
+  ];
+  cards.innerHTML = items.map(it => {
+    const cur = (yoy.cur.byCat[it.key] || 0) / weeks;
+    const ly = (yoy.ly.byCat[it.key] || 0) / weeks;
+    if (cur === 0 && ly === 0) return '';
+    const diff = ly > 0 ? ((cur - ly) / ly) * 100 : (cur > 0 ? 100 : 0);
+    const cls = Math.abs(diff) < 10 ? 'flat' : (diff > 0 ? 'up' : 'down');
+    const sign = diff > 0 ? '+' : '';
+    return `<div class="season-card ${cls}">
+      <div class="season-card-label">${it.label}</div>
+      <div class="season-card-value">${cur.toFixed(1)}h <span style="font-size:12px;color:${diff>0?'#059669':diff<0?'#dc2626':'#666'}">${sign}${diff.toFixed(0)}%</span></div>
+      <div class="season-card-sub">vs. ${ly.toFixed(1)}h same window last year</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const customerByMonth = months.map(mm => ({ m: mm, h: (m.byMonthCat[mm] && m.byMonthCat[mm].customer) || 0 }));
+  let peakCust = null, troughCust = null;
+  if (customerByMonth.length >= 6) {
+    const sorted = [...customerByMonth].sort((a,b) => b.h - a.h);
+    if (sorted[0].h > 0) peakCust = sorted[0];
+    troughCust = sorted[sorted.length - 1];
+  }
+  return { yoy, peakCust, troughCust, monthlyTotals: m.byMonthTotal };
+}
+
+function renderInsights(a, season) {
+  const div = document.getElementById('insights');
+  const tips = [];
+  const customerPct = a.pcts.customer || 0;
+  const internalPct = (a.pcts.internal || 0) + (a.pcts.cross_functional || 0);
+  const hoursPerWeek = a.workHours / a.weeks;
+
+  if (customerPct < 20) tips.push(`<li><strong>Customer-facing time is critically low (${customerPct.toFixed(0)}%).</strong> For any customer-driven role (Sales, PM, CSM) this is a risk signal. Block at least 4&ndash;6 hours/week for user research, customer calls, or discovery.</li>`);
+  if (internalPct > 35) tips.push(`<li><strong>Too many internal meetings (${internalPct.toFixed(0)}%).</strong> SaaS standard is &le;15%. Consider: shorten Daily Sync to 15 min, merge Bug Review + High Priority Tickets, move Design Sync to async (Slack/Loom).</li>`);
+  if (hoursPerWeek > 25) tips.push(`<li><strong>${hoursPerWeek.toFixed(0)}h/week in meetings is overload.</strong> That leaves &lt;15h for deep work in a 40h week. Add two 2-hour &ldquo;no-meeting blocks&rdquo; each week.</li>`);
+
+  const dowSorted = a.byDow.map((h, i) => ({ d: i, h })).sort((a, b) => b.h - a.h);
+  const peakDay = DAY_NAMES_LONG[dowSorted[0].d];
+  const lightDay = DAY_NAMES_LONG[dowSorted[4].d];
+  tips.push(`<li>Busiest day: <strong>${peakDay}</strong> (${(dowSorted[0].h/a.weeks).toFixed(1)}h). Lightest weekday: <strong>${lightDay}</strong> (${(dowSorted[4].h/a.weeks).toFixed(1)}h). Plan deep work on the lightest day.</li>`);
+
+  if (season && season.yoy) {
+    const cur = season.yoy.cur, ly = season.yoy.ly;
+    const curCust = (cur.byCat.customer || 0);
+    const lyCust = (ly.byCat.customer || 0);
+    if (lyCust > 0) {
+      const diff = ((curCust - lyCust) / lyCust) * 100;
+      if (Math.abs(diff) >= 15) {
+        const dir = diff > 0 ? 'more' : 'fewer';
+        const dirCls = diff > 0 ? '#059669' : '#dc2626';
+        tips.push(`<li><strong style="color:${dirCls}">YoY: ${Math.abs(diff).toFixed(0)}% ${dir} customer-facing meetings</strong> than the same 12-week window last year (${(curCust/a.weeks).toFixed(1)}h/wk vs. ${(lyCust/a.weeks).toFixed(1)}h/wk). ${diff < 0 ? 'Possible drivers: fewer leads, ICP shift, market trend, or focus pulled to internal work.' : 'Hot streak &mdash; investigate what&rsquo;s working and lock it in as a standard.'}</li>`);
+      }
+    }
+    const curTotal = cur.workHours / a.weeks;
+    const lyTotal = ly.workHours / a.weeks;
+    if (lyTotal > 0) {
+      const diffTotal = ((curTotal - lyTotal) / lyTotal) * 100;
+      if (Math.abs(diffTotal) >= 15) {
+        tips.push(`<li><strong>YoY: total meeting load is ${diffTotal > 0 ? 'up' : 'down'} ${Math.abs(diffTotal).toFixed(0)}%</strong> (${curTotal.toFixed(1)}h/wk now vs. ${lyTotal.toFixed(1)}h/wk last year).</li>`);
+      }
+    }
+  }
+  if (season && season.peakCust && season.troughCust && season.peakCust.h > 0) {
+    const peakLabel = (() => { const [y, mn] = season.peakCust.m.split('-'); return `${MONTH_NAMES[parseInt(mn)-1]} ${y}`; })();
+    const troughLabel = (() => { const [y, mn] = season.troughCust.m.split('-'); return `${MONTH_NAMES[parseInt(mn)-1]} ${y}`; })();
+    if (season.peakCust.h > season.troughCust.h * 1.3) {
+      tips.push(`<li><strong>Customer-facing seasonality:</strong> peak in <strong>${peakLabel}</strong> (${season.peakCust.h.toFixed(0)}h), trough in <strong>${troughLabel}</strong> (${season.troughCust.h.toFixed(0)}h). Plan campaigns and outbound for peak months; use the quiet stretch for enablement and strategic work.</li>`);
+    }
+  }
+  if (season && season.monthlyTotals) {
+    const months = Object.keys(season.monthlyTotals).sort();
+    if (months.length >= 6) {
+      const summer = months.filter(m => ['06','07','08'].includes(m.split('-')[1]));
+      const dec = months.filter(m => m.split('-')[1] === '12');
+      const avg = months.reduce((s,m) => s + season.monthlyTotals[m], 0) / months.length;
+      if (summer.length) {
+        const sAvg = summer.reduce((s,m) => s + season.monthlyTotals[m], 0) / summer.length;
+        if (sAvg < avg * 0.75) tips.push(`<li><strong>Summer slowdown</strong> (${summer.map(s=>MONTH_NAMES[parseInt(s.split('-')[1])-1]).join(', ')}): ~${(sAvg/avg*100).toFixed(0)}% of average load. Classic SaaS pattern &mdash; use the dip for planning and training.</li>`);
+      }
+      if (dec.length) {
+        const dAvg = dec.reduce((s,m) => s + season.monthlyTotals[m], 0) / dec.length;
+        if (dAvg < avg * 0.8) tips.push(`<li><strong>December low season</strong> (~${(dAvg/avg*100).toFixed(0)}% of average). Expected holiday slowdown &mdash; calibrate quotas/targets accordingly.</li>`);
+      }
+    }
+  }
+
+  div.innerHTML = `<ul style="margin:0;padding-left:20px">${tips.join('')}</ul>`;
+}
+
+function updateHistoryPill(fetchedAt) {
+  const pill = document.getElementById('historyPill');
+  if (!fetchedAt) { pill.style.display = 'none'; return; }
+  const ageH = (Date.now() - new Date(fetchedAt).getTime()) / 3600000;
+  const ageStr = ageH < 1 ? 'just now' : ageH < 24 ? `${Math.round(ageH)}h ago` : `${Math.round(ageH/24)}d ago`;
+  pill.textContent = `Year history: refreshed ${ageStr}`;
+  pill.className = 'history-pill' + (ageH > HIST_TTL_DAYS * 24 ? ' stale' : '');
+  pill.style.display = 'inline-block';
+}
+
+async function refresh(forceHistRefresh) {
+  const btn = document.getElementById('reloadBtn');
+  const btn2 = document.getElementById('reloadHistBtn');
+  const errBox = document.getElementById('errorBox');
+  errBox.innerHTML = '';
+  btn.disabled = true; btn2.disabled = true;
+  try {
+    const weeks = parseInt(document.getElementById('period').value);
+    document.getElementById('subtitle').textContent = `Account: ${USER_EMAIL} · Period: last ${weeks} weeks · Benchmarks: Salesforce State of Sales 2024, HubSpot, Pavilion`;
+
+    document.getElementById('status').textContent = 'Loading current period...';
+    const events = await fetchRange(weeks, (i, n) => {
+      document.getElementById('status').textContent = `Current period: ${i+1}/${n} chunks`;
+    });
+    const a = analyze(events.map(e => ({ ...e, cat: categorize(e) })), weeks);
+    renderRoleNote(a);
+    renderKpis(a);
+    renderBenchmarks(a);
+    renderDonut(a);
+    renderDow(a);
+    renderHeatmap(a);
+    renderTopMeetings(a);
+
+    const hist = await ensureHistory(forceHistRefresh);
+    updateHistoryPill(hist.fetchedAt);
+    const season = renderSeasonality(hist.events, weeks);
+    renderInsights(a, season);
+
+    document.getElementById('status').textContent = `Done · current: ${a.eventCount} events / ${a.workHours.toFixed(0)}h · history: ${hist.events.length} events ${hist.cached ? '(from cache)' : '(fresh)'}`;
+    try { localStorage.setItem('cal_period', String(weeks)); } catch {}
+  } catch (e) {
+    console.error(e);
+    errBox.innerHTML = `<div class="error">Error: ${e.message || e}</div>`;
+  } finally {
+    btn.disabled = false; btn2.disabled = false;
+  }
+}
+
+document.getElementById('reloadBtn').addEventListener('click', () => refresh(false));
+document.getElementById('reloadHistBtn').addEventListener('click', () => refresh(true));
+document.getElementById('period').addEventListener('change', () => refresh(false));
+
+try {
+  const saved = localStorage.getItem('cal_period');
+  if (saved) document.getElementById('period').value = saved;
+} catch {}
+
+refresh(false);
+</script>
+</body>
+</html>

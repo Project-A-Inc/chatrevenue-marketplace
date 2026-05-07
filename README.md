@@ -37,9 +37,19 @@ Cowork-compatible plugin marketplace from ChatRevenue. Distributes the ChatReven
         │   ├── tsconfig.json
         │   └── README.md
         ├── skills/
-        │   ├── chatrevenue-memory/SKILL.md
-        │   ├── chatrevenue-help-with-current-activity/SKILL.md
-        │   └── chatrevenue-icp-lead-gen/SKILL.md
+        │   ├── chatrevenue-memory/SKILL.md                          # invocation
+        │   ├── chatrevenue-help-with-current-activity/SKILL.md      # invocation
+        │   ├── chatrevenue-icp-lead-gen/SKILL.md                    # invocation
+        │   ├── setup-icp-lead-gen-daily/                            # setup
+        │   │   ├── SKILL.md
+        │   │   └── SCHEDULE.md
+        │   ├── setup-sales-inbox-digest/                            # setup
+        │   │   ├── SKILL.md
+        │   │   └── SCHEDULE.md
+        │   └── setup-calendar-analysis/                             # setup
+        │       ├── SKILL.md
+        │       ├── ARTIFACT.md
+        │       └── template.html
         └── README.md
 ```
 
@@ -47,7 +57,7 @@ Cowork-compatible plugin marketplace from ChatRevenue. Distributes the ChatReven
 
 | Plugin | What it does |
 |---|---|
-| `chatrevenue` | Three sales-rep skills: `chatrevenue-memory` (screen-memory queries), `chatrevenue-help-with-current-activity` (watcher-fired activity help), `chatrevenue-icp-lead-gen` (ICP lead-generation assistant — standalone). The first two need the [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor) running for the MCP server the proxy talks to. |
+| `chatrevenue` | Three invocation skills (`chatrevenue-memory` for screen-memory queries, `chatrevenue-help-with-current-activity` for watcher-fired toast handoff, `chatrevenue-icp-lead-gen` for ICP lead generation), three setup skills (`setup-icp-lead-gen-daily`, `setup-sales-inbox-digest`, `setup-calendar-analysis`) that register Cowork-native scheduled tasks + artifacts, and the `chatrevenue-memory` MCP server connector via a bundled stdio↔HTTP proxy. The first two invocation skills need the [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor) running for the MCP server the proxy talks to. |
 
 ## License
 
