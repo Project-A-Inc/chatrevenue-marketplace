@@ -1,0 +1,218 @@
+/**
+ * Hardcoded tool list for fallback mode (used when the upstream MCP
+ * server on 127.0.0.1:53517 is unreachable, i.e. the ChatRevenue
+ * Monitor desktop app isn't running or isn't installed).
+ *
+ * Names + input schemas match `desktop/scripts/chatrevenue_mcp_server.py`
+ * 1:1 so the surface Cowork sees in fallback mode matches what it
+ * sees once the desktop app comes up. Descriptions are abbreviated.
+ *
+ * Keep this list in sync with the @mcp.tool() decorators in
+ * chatrevenue_mcp_server.py whenever a tool is added/removed/renamed.
+ */
+
+export type FallbackTool = {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+    additionalProperties?: boolean;
+  };
+};
+
+export const FALLBACK_TOOLS: FallbackTool[] = [
+  {
+    name: "what_am_i_doing_now",
+    description:
+      "Snapshot of the user's current activity, fresh to the minute. Combines today.md, gap-fill 15-minute windows, and the last ten 30-second captures.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "search_memories",
+    description:
+      "Full-text search across all memory levels. Case-insensitive substring match on file contents.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "Search string (person name, email, topic keyword, app name, URL fragment, ...).",
+        },
+        days_back: {
+          type: "integer",
+          description: "Only include memories whose date is within the last N days.",
+          default: 7,
+        },
+        limit: { type: "integer", default: 20 },
+      },
+      required: ["query"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "timeline",
+    description:
+      "Return memories whose timestamp falls in [start, end). 30s/15m/1h memories use UTC timestamps in their filenames.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        start: {
+          type: "string",
+          description: 'ISO "YYYY-MM-DD HH:MM" (UTC for 30s/15m/1h levels; local for 1d).',
+        },
+        end: { type: "string", description: 'ISO "YYYY-MM-DD HH:MM".' },
+        level: {
+          type: "string",
+          description: 'One of "30s", "15m", "1h", "1d", or "auto".',
+          default: "auto",
+        },
+      },
+      required: ["start", "end"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "daily_summary",
+    description:
+      'Return the day-level summary for a given date ("today" | "yesterday" | "YYYY-MM-DD").',
+    inputSchema: {
+      type: "object",
+      properties: {
+        date: { type: "string", default: "today" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_people",
+    description:
+      "List distinct people mentioned in memories over the recent period. Pulls `people:` sections from today.md + recent 1d and 1h summaries.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days_back: { type: "integer", default: 7 },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "brief_on",
+    description:
+      'Pull all memories that mention a topic (person name, email, project name, keyword) over the recent period — for synthesizing a brief ("what do I know about X?", "prep me for a call with Y").',
+    inputSchema: {
+      type: "object",
+      properties: {
+        topic: { type: "string" },
+        days_back: { type: "integer", default: 30 },
+      },
+      required: ["topic"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "stats",
+    description:
+      "Quick stats about the memory store — counts per level, earliest/latest timestamps, whether today.md exists.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "latest_incident",
+    description:
+      "Return the most recent watcher incident, or an empty dict if none. Use when the user's message contains the trigger phrase `/chatrevenue-help-with-current-activity <id>`.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "list_incidents",
+    description: "List recent watcher incidents (newest first), up to `limit` entries.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "integer", default: 10 },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_incident",
+    description:
+      "Return a specific incident by id, or fall back to latest_incident. The toast deep-link includes an incident id.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        incident_id: { type: "string" },
+      },
+      required: ["incident_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "chatrevenue_install_cowork_package_plan",
+    description:
+      "Plan for the first-time install of one ChatRevenue Cowork package (skill / scheduled task / artifact).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", description: '"skill" | "schedule" | "artifact".' },
+        name: { type: "string" },
+      },
+      required: ["kind", "name"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "chatrevenue_update_cowork_package_plan",
+    description:
+      "Plan for updating or re-triggering one ChatRevenue Cowork package already in Cowork.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: { type: "string" },
+        name: { type: "string" },
+      },
+      required: ["kind", "name"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "chatrevenue_uninstall_cowork_package_plan",
+    description: "Plan for removing one ChatRevenue Cowork package.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: { type: "string" },
+        name: { type: "string" },
+      },
+      required: ["kind", "name"],
+      additionalProperties: false,
+    },
+  },
+];
+
+/**
+ * Friendly fallback response returned when the upstream MCP server
+ * isn't reachable. Returned for every CallTool request in fallback
+ * mode regardless of which tool was called.
+ */
+export const FALLBACK_NOT_RUNNING_MESSAGE = `ChatRevenue Monitor desktop app isn't running.
+
+This MCP needs the desktop app to be running locally — that's where your screen-memory store lives. The plugin only carries a thin proxy that forwards tool calls to the desktop app's local MCP server on http://127.0.0.1:53517.
+
+To fix:
+
+  1. **If you haven't installed the app yet**, download it from
+     https://github.com/Project-A-Inc/project-a-monitor/releases/latest
+     and run the installer. (Windows-only for now; macOS support is on the roadmap.)
+
+  2. **If the app is installed**, start it from the Start menu — look for
+     "ChatRevenue Monitor". It runs in the system tray.
+
+  3. Once the app's tray icon appears, retry your request — no Cowork
+     restart needed; this proxy auto-recovers as soon as the desktop
+     app's MCP server is reachable.
+
+Need to verify the app is running? Open a terminal and run:
+  curl http://127.0.0.1:53517/mcp
+A 4xx/5xx response (any HTTP response, in fact) means the app is up. Connection refused means it isn't.`;
