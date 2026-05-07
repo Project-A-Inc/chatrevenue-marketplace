@@ -9,4 +9,4 @@ Minimal hello-world plugin used to validate Cowork's marketplace mechanics.
 
 ## Source
 
-Part of the [chatrevenue-marketplace](https://github.com/oleksandr-ieremchuk/chatrevenue-marketplace).
+Part of the [chatrevenue-marketplace](https://github.com/Project-A-Inc/chatrevenue-marketplace).

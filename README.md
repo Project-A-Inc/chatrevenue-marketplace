@@ -9,7 +9,7 @@ This repo is a learning artefact — it lets us understand how Claude Cowork act
 1. Open Cowork → Customize → **+** Personal plugins → **Create plugin** → **Add marketplace**
 2. Paste:
    ```
-   oleksandr-ieremchuk/chatrevenue-marketplace
+   Project-A-Inc/chatrevenue-marketplace
    ```
 3. Sign in to GitHub when prompted (Cowork uses GitHub OAuth to fetch repos).
 
