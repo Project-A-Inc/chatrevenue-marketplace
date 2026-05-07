@@ -1,6 +1,6 @@
 # chatrevenue
 
-ChatRevenue skills bundle for sales reps. Installs three skills + the `chatrevenue-memory` MCP server, all in one Cowork plugin.
+ChatRevenue skills bundle for sales reps. Installs the `chatrevenue-memory` MCP server (via a bundled stdio↔HTTP proxy), three invocation skills (memory queries, watcher-fired activity help, ICP lead-gen Day-1 onboarding), and three setup skills that register Cowork-native scheduled tasks + artifacts in the user's workspace.
 
 > **Prerequisites**
 > 1. **Node.js 18+** on the user's PATH (Cowork plugins use system Node, not Cowork's bundled Electron runtime). Install from [nodejs.org](https://nodejs.org/) or `winget install OpenJS.NodeJS.LTS` / `brew install node`. **Required** — without it Cowork can't spawn the plugin's proxy.
@@ -10,11 +10,23 @@ ChatRevenue skills bundle for sales reps. Installs three skills + the `chatreven
 
 ## What you get
 
+### Invocation skills
+
 | Skill | What it does | Standalone? |
 |---|---|---|
 | `chatrevenue-memory` | Reads your local screen-memory store (last few weeks of screenshot-derived markdown memories). Answers "what was I doing", "prep me for X", "find when I mentioned Y", end-of-day summaries. | **No** — needs the desktop app running (it owns the MCP server). |
 | `chatrevenue-help-with-current-activity` | Watcher-fired incident handoff. The Monitor app's daemon detects "helpable" foreground activities (writing email, reviewing PRs, …) and fires a system toast that opens Cowork at `/chatrevenue-help-with-current-activity <incident-id>`. This skill resolves the incident, reads the live screen, and produces 2–3 specific next-action suggestions. | **No** — needs the desktop app for both the MCP server and the watcher. |
 | `chatrevenue-icp-lead-gen` | Sales research partner. Day-1 conversational onboarding (interview the rep, build an ICP profile, save a leads tracker), daily/ad-hoc lead discovery, handoff briefs, tracker status sync. | **Yes** — uses Cowork's built-in web search + standard Cowork connectors only. No dependency on the desktop app or Node. |
+
+### Setup skills
+
+These skills register Cowork-native scheduled tasks + artifacts in the user's workspace. Each one bundles its install playbook and content as plugin-side companion files; re-running the skill refreshes the user's task/artifact to the latest version. There are no separate `update-*` / `uninstall-*` skills — re-run `setup-*` to update; remove manually in Cowork's Scheduled list / artifact UI.
+
+| Skill | What it does | Standalone? |
+|---|---|---|
+| `setup-icp-lead-gen-daily` | Registers a Cowork scheduled task that finds 3 fresh ICP-fit leads every weekday morning and appends them to the user's tracker. Requires the `chatrevenue-icp-lead-gen` Day-1 setup to have completed first (so the profile + tracker exist). | **Yes** |
+| `setup-sales-inbox-digest` | Registers a Cowork scheduled task that scans Outlook each morning, categorizes mail, drafts replies for client/partner threads, and writes a markdown digest. Requires Microsoft 365 + one CRM connector. | **Yes** |
+| `setup-calendar-analysis` | Creates a Cowork-native artifact — interactive HTML dashboard that reads Outlook calendar via MCP, classifies meetings, and benchmarks against published SaaS Sales IC data. Requires the user's Outlook calendar-search MCP tool. | **Yes** |
 
 ## How the MCP connection works
 
@@ -58,4 +70,4 @@ If the desktop app isn't installed yet, install it from [Project-A-Inc/project-a
 
 Part of the [chatrevenue-marketplace](https://github.com/Project-A-Inc/chatrevenue-marketplace). The proxy source is in `proxy/src/index.ts`; rebuild with `cd proxy && npm install && npm run build` after every edit and commit `dist/bundle.js`.
 
-The skill files are mirrored from the desktop app's `desktop/resources/skills/` directory — kept in sync manually at release time. If you want the latest version, install from this marketplace and re-sync periodically (Cowork → Customize → Personal plugins → marketplace → ⋯ → Sync).
+Skills + their setup playbooks live in this repo as the source of truth. The desktop app no longer ships its own copy of skills / schedules / artifacts — pre-Option-C versions distributed those via three MCP plan-tools (`chatrevenue_install_cowork_package_plan` etc); those tools were dropped in favour of the `setup-*` skills here.
