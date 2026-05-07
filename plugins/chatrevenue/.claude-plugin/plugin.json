@@ -1,9 +1,8 @@
 {
   "name": "chatrevenue",
-  "description": "ChatRevenue skills bundle for sales reps. Three skills: chatrevenue-memory (queries the local screen-memory store), chatrevenue-help-with-current-activity (watcher-fired incident handoff), chatrevenue-icp-lead-gen (standalone ICP lead-generation assistant). The first two require the ChatRevenue Monitor desktop app running locally so its MCP server is registered with Cowork; chatrevenue-icp-lead-gen works on its own.",
+  "description": "ChatRevenue skills bundle for sales reps: memory queries, watcher-fired activity help, ICP lead-generation assistant.",
   "author": {
     "name": "ChatRevenue",
     "email": "oleksandr.ieremchuk@chatrevenue.ai"
-  },
-  "homepage": "https://github.com/Project-A-Inc/chatrevenue-marketplace"
+  }
 }
