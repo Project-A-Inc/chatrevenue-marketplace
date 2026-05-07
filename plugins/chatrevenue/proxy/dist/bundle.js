@@ -17778,78 +17778,285 @@ var StreamableHTTPClientTransport = class {
   }
 };
 
+// src/fallback-tools.ts
+var FALLBACK_TOOLS = [
+  {
+    name: "what_am_i_doing_now",
+    description: "Snapshot of the user's current activity, fresh to the minute. Combines today.md, gap-fill 15-minute windows, and the last ten 30-second captures.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false }
+  },
+  {
+    name: "search_memories",
+    description: "Full-text search across all memory levels. Case-insensitive substring match on file contents.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Search string (person name, email, topic keyword, app name, URL fragment, ...)."
+        },
+        days_back: {
+          type: "integer",
+          description: "Only include memories whose date is within the last N days.",
+          default: 7
+        },
+        limit: { type: "integer", default: 20 }
+      },
+      required: ["query"],
+      additionalProperties: false
+    }
+  },
+  {
+    name: "timeline",
+    description: "Return memories whose timestamp falls in [start, end). 30s/15m/1h memories use UTC timestamps in their filenames.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        start: {
+          type: "string",
+          description: 'ISO "YYYY-MM-DD HH:MM" (UTC for 30s/15m/1h levels; local for 1d).'
+        },
+        end: { type: "string", description: 'ISO "YYYY-MM-DD HH:MM".' },
+        level: {
+          type: "string",
+          description: 'One of "30s", "15m", "1h", "1d", or "auto".',
+          default: "auto"
+        }
+      },
+      required: ["start", "end"],
+      additionalProperties: false
+    }
+  },
+  {
+    name: "daily_summary",
+    description: 'Return the day-level summary for a given date ("today" | "yesterday" | "YYYY-MM-DD").',
+    inputSchema: {
+      type: "object",
+      properties: {
+        date: { type: "string", default: "today" }
+      },
+      additionalProperties: false
+    }
+  },
+  {
+    name: "list_people",
+    description: "List distinct people mentioned in memories over the recent period. Pulls `people:` sections from today.md + recent 1d and 1h summaries.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days_back: { type: "integer", default: 7 }
+      },
+      additionalProperties: false
+    }
+  },
+  {
+    name: "brief_on",
+    description: 'Pull all memories that mention a topic (person name, email, project name, keyword) over the recent period \u2014 for synthesizing a brief ("what do I know about X?", "prep me for a call with Y").',
+    inputSchema: {
+      type: "object",
+      properties: {
+        topic: { type: "string" },
+        days_back: { type: "integer", default: 30 }
+      },
+      required: ["topic"],
+      additionalProperties: false
+    }
+  },
+  {
+    name: "stats",
+    description: "Quick stats about the memory store \u2014 counts per level, earliest/latest timestamps, whether today.md exists.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false }
+  },
+  {
+    name: "latest_incident",
+    description: "Return the most recent watcher incident, or an empty dict if none. Use when the user's message contains the trigger phrase `/chatrevenue-help-with-current-activity <id>`.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false }
+  },
+  {
+    name: "list_incidents",
+    description: "List recent watcher incidents (newest first), up to `limit` entries.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "integer", default: 10 }
+      },
+      additionalProperties: false
+    }
+  },
+  {
+    name: "get_incident",
+    description: "Return a specific incident by id, or fall back to latest_incident. The toast deep-link includes an incident id.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        incident_id: { type: "string" }
+      },
+      required: ["incident_id"],
+      additionalProperties: false
+    }
+  },
+  {
+    name: "chatrevenue_install_cowork_package_plan",
+    description: "Plan for the first-time install of one ChatRevenue Cowork package (skill / scheduled task / artifact).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", description: '"skill" | "schedule" | "artifact".' },
+        name: { type: "string" }
+      },
+      required: ["kind", "name"],
+      additionalProperties: false
+    }
+  },
+  {
+    name: "chatrevenue_update_cowork_package_plan",
+    description: "Plan for updating or re-triggering one ChatRevenue Cowork package already in Cowork.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: { type: "string" },
+        name: { type: "string" }
+      },
+      required: ["kind", "name"],
+      additionalProperties: false
+    }
+  },
+  {
+    name: "chatrevenue_uninstall_cowork_package_plan",
+    description: "Plan for removing one ChatRevenue Cowork package.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: { type: "string" },
+        name: { type: "string" }
+      },
+      required: ["kind", "name"],
+      additionalProperties: false
+    }
+  }
+];
+var FALLBACK_NOT_RUNNING_MESSAGE = `ChatRevenue Monitor desktop app isn't running.
+
+This MCP needs the desktop app to be running locally \u2014 that's where your screen-memory store lives. The plugin only carries a thin proxy that forwards tool calls to the desktop app's local MCP server on http://127.0.0.1:53517.
+
+To fix:
+
+  1. **If you haven't installed the app yet**, download it from
+     https://github.com/Project-A-Inc/project-a-monitor/releases/latest
+     and run the installer. (Windows-only for now; macOS support is on the roadmap.)
+
+  2. **If the app is installed**, start it from the Start menu \u2014 look for
+     "ChatRevenue Monitor". It runs in the system tray.
+
+  3. Once the app's tray icon appears, retry your request \u2014 no Cowork
+     restart needed; this proxy auto-recovers as soon as the desktop
+     app's MCP server is reachable.
+
+Need to verify the app is running? Open a terminal and run:
+  curl http://127.0.0.1:53517/mcp
+A 4xx/5xx response (any HTTP response, in fact) means the app is up. Connection refused means it isn't.`;
+
 // src/index.ts
 var upstreamUrl = process.env.MCP_URL ?? "http://127.0.0.1:53517/mcp";
+var CONNECT_TIMEOUT_MS = 1500;
 function logErr(...args) {
   console.error("[cr-mcp-proxy]", ...args);
 }
-async function main() {
-  const upstream = new Client(
+var upstream = null;
+var connectInFlight = null;
+async function tryConnectUpstream() {
+  const c = new Client(
     { name: "cr-mcp-proxy", version: "1.0.0" },
     { capabilities: {} }
   );
+  const transport = new StreamableHTTPClientTransport(new URL(upstreamUrl));
+  const timer = new Promise((resolve) => {
+    setTimeout(() => resolve(null), CONNECT_TIMEOUT_MS);
+  });
   try {
-    await upstream.connect(
-      new StreamableHTTPClientTransport(new URL(upstreamUrl))
-    );
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logErr(
-      `Failed to connect to upstream MCP at ${upstreamUrl}: ${msg}.`,
-      "Make sure the ChatRevenue Monitor desktop app is running."
-    );
-    process.exit(1);
+    const ok = await Promise.race([
+      c.connect(transport).then(() => "ok"),
+      timer
+    ]);
+    if (ok === null) {
+      try {
+        await c.close();
+      } catch {
+      }
+      return null;
+    }
+  } catch {
+    return null;
   }
-  logErr(`Connected to upstream MCP at ${upstreamUrl}`);
-  const caps = upstream.getServerCapabilities() ?? {};
+  c.onclose = () => {
+    if (upstream === c) {
+      upstream = null;
+    }
+  };
+  return c;
+}
+async function ensureUpstream() {
+  if (upstream) return upstream;
+  if (connectInFlight) return connectInFlight;
+  connectInFlight = (async () => {
+    const c = await tryConnectUpstream();
+    upstream = c;
+    return c;
+  })().finally(() => {
+    connectInFlight = null;
+  });
+  return connectInFlight;
+}
+async function main() {
+  const initial = await ensureUpstream();
+  if (initial) {
+    logErr(`Connected to upstream MCP at ${upstreamUrl}`);
+  } else {
+    logErr(
+      `Upstream MCP not reachable at ${upstreamUrl} on startup; entering fallback mode.`,
+      "Tools will return install-the-desktop-app guidance until the upstream comes up."
+    );
+  }
   const local = new Server(
     { name: "chatrevenue-memory", version: "1.0.0" },
-    {
-      capabilities: {
-        tools: caps.tools ? {} : void 0,
-        resources: caps.resources ? {} : void 0,
-        prompts: caps.prompts ? {} : void 0
+    { capabilities: { tools: {} } }
+  );
+  local.setRequestHandler(ListToolsRequestSchema, async () => {
+    const client = await ensureUpstream();
+    if (client) {
+      try {
+        return await client.listTools();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logErr(`upstream.listTools failed: ${msg}; serving fallback list.`);
+        upstream = null;
       }
     }
-  );
-  if (caps.tools) {
-    local.setRequestHandler(
-      ListToolsRequestSchema,
-      async () => upstream.listTools()
-    );
-    local.setRequestHandler(
-      CallToolRequestSchema,
-      async (req) => upstream.callTool(req.params)
-    );
-  }
-  if (caps.resources) {
-    local.setRequestHandler(
-      ListResourcesRequestSchema,
-      async () => upstream.listResources()
-    );
-    local.setRequestHandler(
-      ListResourceTemplatesRequestSchema,
-      async () => upstream.listResourceTemplates()
-    );
-    local.setRequestHandler(
-      ReadResourceRequestSchema,
-      async (req) => upstream.readResource(req.params)
-    );
-  }
-  if (caps.prompts) {
-    local.setRequestHandler(
-      ListPromptsRequestSchema,
-      async () => upstream.listPrompts()
-    );
-    local.setRequestHandler(
-      GetPromptRequestSchema,
-      async (req) => upstream.getPrompt(req.params)
-    );
-  }
-  upstream.onclose = () => {
-    logErr("Upstream connection closed; exiting.");
-    process.exit(1);
-  };
+    return { tools: FALLBACK_TOOLS };
+  });
+  local.setRequestHandler(CallToolRequestSchema, async (req) => {
+    const client = await ensureUpstream();
+    if (client) {
+      try {
+        return await client.callTool(req.params);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logErr(
+          `upstream.callTool(${req.params.name}) failed: ${msg}; returning fallback message.`
+        );
+        upstream = null;
+      }
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: FALLBACK_NOT_RUNNING_MESSAGE
+        }
+      ],
+      isError: true
+    };
+  });
   await local.connect(new StdioServerTransport());
   process.on("SIGINT", () => process.exit(0));
   process.on("SIGTERM", () => process.exit(0));

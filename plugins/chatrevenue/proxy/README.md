@@ -40,10 +40,22 @@ npm run build
 
 ## Prerequisites
 
-- **Node.js 18+ on the user's PATH.** Cowork plugins use system Node, not Cowork's bundled Electron runtime — that's reserved for `.mcpb` Desktop Extensions.
-- ChatRevenue Monitor desktop app installed and running. The supervised HTTP MCP server starts as part of the app's normal boot sequence.
+- **Node.js 18+ on the user's PATH.** Cowork plugins use system Node, not Cowork's bundled Electron runtime — that's reserved for `.mcpb` Desktop Extensions. Without Node, Cowork can't spawn the proxy at all and the `chatrevenue-memory` tools won't appear in chat.
+- ChatRevenue Monitor desktop app installed and running. The supervised HTTP MCP server starts as part of the app's normal boot sequence. **Optional at proxy startup, required at tool-call time** — see fallback below.
 
 If `node` isn't on PATH, install Node LTS from [nodejs.org](https://nodejs.org/) or via `winget install OpenJS.NodeJS.LTS` (Windows) / `brew install node` (macOS).
+
+## Fallback mode (desktop app not running)
+
+If the desktop app isn't installed or isn't running when Cowork spawns the proxy, the proxy does **not** crash — Cowork still sees a healthy `chatrevenue-memory` server with the full hardcoded tool list (`fallback-tools.ts`, names + schemas matching the real upstream 1:1). Every `tools/call` returns a friendly error explaining what's missing and how to install / start the desktop app:
+
+- "If you haven't installed the app yet, download from https://github.com/Project-A-Inc/project-a-monitor/releases/latest"
+- "If installed, start it from the Start menu — runs in the system tray"
+- "No Cowork restart needed; this proxy auto-recovers"
+
+On every request the proxy retries the upstream connection. As soon as the desktop app comes up, the next tool call hits live tools without any user intervention.
+
+This means the plugin is safe to install as a soft dependency: a sales rep can add the plugin to Cowork before installing the desktop app, get clear instructions in chat, install the app, and continue without restarting Cowork.
 
 ## Cross-platform
 

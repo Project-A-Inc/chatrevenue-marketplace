@@ -3,8 +3,8 @@
 ChatRevenue skills bundle for sales reps. Installs three skills + the `chatrevenue-memory` MCP server, all in one Cowork plugin.
 
 > **Prerequisites**
-> 1. **Node.js 18+** on the user's PATH (Cowork plugins use system Node, not Cowork's bundled Electron runtime). Install from [nodejs.org](https://nodejs.org/) or `winget install OpenJS.NodeJS.LTS` / `brew install node`.
-> 2. [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor) running on the same machine. Memories are read by the desktop app's supervised MCP server on `127.0.0.1:53517`; the plugin only talks to that loopback URL.
+> 1. **Node.js 18+** on the user's PATH (Cowork plugins use system Node, not Cowork's bundled Electron runtime). Install from [nodejs.org](https://nodejs.org/) or `winget install OpenJS.NodeJS.LTS` / `brew install node`. **Required** — without it Cowork can't spawn the plugin's proxy.
+> 2. [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor) running on the same machine. Memories live in the desktop app's local store; the plugin's proxy forwards tool calls to its supervised MCP server on `127.0.0.1:53517`. **Soft requirement** — if the app isn't running when you call a memory tool, the proxy returns a friendly install-instructions message instead of crashing, and auto-recovers as soon as you start the app (no Cowork restart needed).
 >
 > (`chatrevenue-icp-lead-gen` is the exception — it works without the desktop app and without Node.)
 
