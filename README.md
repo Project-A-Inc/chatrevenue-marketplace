@@ -1,8 +1,8 @@
 # chatrevenue-marketplace
 
-Cowork-compatible plugin marketplace from ChatRevenue. Distributes the ChatRevenue skills bundle + an MCP-server connector that points Cowork at the [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor)'s local HTTP server (`http://127.0.0.1:53517/mcp`).
+Cowork-compatible plugin marketplace from ChatRevenue. Distributes the ChatRevenue skills bundle + an MCP-server connector that spawns the [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor)'s bundled Python script as a stdio subprocess on demand.
 
-> **Prerequisite:** the desktop app must be installed and running on the same machine for the memory + activity skills to work. The plugin is just the connector — it doesn't ship the MCP server itself. (`chatrevenue-icp-lead-gen` is the exception — it works without the app.)
+> **Prerequisite:** the desktop app must be installed at the canonical NSIS path (`%LOCALAPPDATA%\Programs\ChatRevenue Monitor\`) for the memory + activity skills to work. Cowork resolves the plugin's `${env:LOCALAPPDATA}` paths at runtime to find the bundled Python + MCP script + per-user data dir. (`chatrevenue-icp-lead-gen` is the exception — it works without the desktop app.)
 
 ## Add to Cowork
 

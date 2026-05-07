@@ -1,8 +1,17 @@
 {
   "mcpServers": {
     "chatrevenue-memory": {
-      "type": "http",
-      "url": "http://127.0.0.1:53517/mcp"
+      "command": "${env:LOCALAPPDATA}\\Programs\\ChatRevenue Monitor\\python\\python.exe",
+      "args": [
+        "${env:LOCALAPPDATA}\\Programs\\ChatRevenue Monitor\\scripts\\chatrevenue_mcp_server.py"
+      ],
+      "env": {
+        "MEMORIES_ROOT": "${env:LOCALAPPDATA}\\ChatRevenueMonitor\\data\\memories",
+        "NOTIFIER_STATE_DIR": "${env:LOCALAPPDATA}\\ChatRevenueMonitor\\data\\notifier\\state",
+        "BUNDLED_SKILLS_DIR": "${env:LOCALAPPDATA}\\Programs\\ChatRevenue Monitor\\resources\\skills",
+        "BUNDLED_SCHEDULES_DIR": "${env:LOCALAPPDATA}\\Programs\\ChatRevenue Monitor\\resources\\schedules",
+        "BUNDLED_ARTIFACTS_DIR": "${env:LOCALAPPDATA}\\Programs\\ChatRevenue Monitor\\resources\\artifacts"
+      }
     }
   }
 }
