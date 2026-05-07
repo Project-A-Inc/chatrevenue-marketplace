@@ -16,6 +16,16 @@
       "category": "demo",
       "source": "./plugins/chatrevenue-hello",
       "homepage": "https://github.com/Project-A-Inc/chatrevenue-marketplace"
+    },
+    {
+      "name": "chatrevenue",
+      "description": "ChatRevenue skills bundle for sales reps: memory queries (chatrevenue-memory), watcher-fired activity help (chatrevenue-help-with-current-activity), and the standalone ICP lead-gen assistant (chatrevenue-icp-lead-gen). The first two skills need the ChatRevenue Monitor desktop app running locally; the third is standalone.",
+      "author": {
+        "name": "ChatRevenue"
+      },
+      "category": "sales",
+      "source": "./plugins/chatrevenue",
+      "homepage": "https://github.com/Project-A-Inc/chatrevenue-marketplace"
     }
   ]
 }

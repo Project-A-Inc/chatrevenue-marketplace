@@ -20,13 +20,19 @@ After it loads, install **chatrevenue-hello** and run `/hello` in any session.
 ```
 .
 ├── .claude-plugin/
-│   └── marketplace.json          # marketplace manifest (Cowork reads this)
+│   └── marketplace.json              # marketplace manifest (Cowork reads this)
 └── plugins/
-    └── chatrevenue-hello/
-        ├── .claude-plugin/
-        │   └── plugin.json        # plugin manifest
-        ├── commands/
-        │   └── hello.md           # the /hello slash command
+    ├── chatrevenue-hello/
+    │   ├── .claude-plugin/plugin.json
+    │   ├── commands/hello.md         # the /hello slash command
+    │   ├── skills/hello/SKILL.md
+    │   └── README.md
+    └── chatrevenue/
+        ├── .claude-plugin/plugin.json
+        ├── skills/
+        │   ├── chatrevenue-memory/SKILL.md
+        │   ├── chatrevenue-help-with-current-activity/SKILL.md
+        │   └── chatrevenue-icp-lead-gen/SKILL.md
         └── README.md
 ```
 
@@ -35,6 +41,7 @@ After it loads, install **chatrevenue-hello** and run `/hello` in any session.
 | Plugin | What it does |
 |---|---|
 | `chatrevenue-hello` | Minimal hello-world; adds the `/hello` slash command. |
+| `chatrevenue` | Three sales-rep skills: `chatrevenue-memory` (screen-memory queries), `chatrevenue-help-with-current-activity` (watcher-fired activity help), `chatrevenue-icp-lead-gen` (ICP lead-generation assistant — standalone). The first two need the [ChatRevenue Monitor desktop app](https://github.com/Project-A-Inc/project-a-monitor) running for the MCP server they call. |
 
 ## License
 
