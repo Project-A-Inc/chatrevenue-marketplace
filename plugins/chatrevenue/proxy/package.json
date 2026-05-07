@@ -1,0 +1,19 @@
+{
+  "name": "@chatrevenue/mcp-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stdio<->streamable-http proxy that bridges Cowork's plugin transport to the ChatRevenue Monitor desktop app's supervised MCP server.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0"
+  }
+}
