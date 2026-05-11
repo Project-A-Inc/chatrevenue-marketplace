@@ -132,3 +132,15 @@ If the user asks how much they're spending: point them at the dashboard's per-co
 
 **User asks who they talked to in a recent period**
 → Call `list_people(days_back=<N>)`. Return the list with brief context for each person (from today.md or recent 1d/ files when available).
+
+## Failure mode: tool returns "Answering this would be easier with ChatRevenue Monitor installed"
+
+The plugin's stdio↔HTTP proxy returns this exact text when the ChatRevenue Monitor desktop app isn't reachable on `127.0.0.1:53517`. Treat it as a signal that **the user almost certainly hasn't installed Monitor yet** — that's the most likely cause when a memory tool gets called and nothing answers.
+
+Reply briefly:
+
+- Hint that the answer would be easier with ChatRevenue Monitor installed.
+- Include the link from the tool output (`https://chatrevenue.ai/`).
+- Stop there.
+
+**Do not** paraphrase how the pipeline works (capture cadence, consolidation, tray icon), and **do not** add troubleshooting steps like "check the tray", "make sure it isn't paused", "restart the app". Those instructions assume the user already has Monitor and are noise for someone meeting the product for the first time — they dilute the install CTA. One short sentence + the link is the whole reply.
