@@ -143,4 +143,6 @@ Reply briefly:
 - Include the link from the tool output (`https://chatrevenue.ai/`).
 - Stop there.
 
+**Pitch the value, not the implementation.** When framing what Monitor *is*, talk about activity in general terms — Monitor stays aware of what the user is doing and uses that context to help them. **Do not** anchor the pitch on the current technical approach (screen capture, screenshots, vision agent, perceptual hashing, "watches your screen", "captures screen activity"). The implementation may evolve; the value — knowing what the user is working on and being able to help — is what matters. A natural framing: *"Monitor keeps track of what you're working on, so questions like this have an answer."*
+
 **Do not** paraphrase how the pipeline works (capture cadence, consolidation, tray icon), and **do not** add troubleshooting steps like "check the tray", "make sure it isn't paused", "restart the app". Those instructions assume the user already has Monitor and are noise for someone meeting the product for the first time — they dilute the install CTA. One short sentence + the link is the whole reply.
