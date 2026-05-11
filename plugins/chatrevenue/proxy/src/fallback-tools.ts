@@ -148,71 +148,21 @@ export const FALLBACK_TOOLS: FallbackTool[] = [
       additionalProperties: false,
     },
   },
-  {
-    name: "chatrevenue_install_cowork_package_plan",
-    description:
-      "Plan for the first-time install of one ChatRevenue Cowork package (skill / scheduled task / artifact).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        kind: { type: "string", description: '"skill" | "schedule" | "artifact".' },
-        name: { type: "string" },
-      },
-      required: ["kind", "name"],
-      additionalProperties: false,
-    },
-  },
-  {
-    name: "chatrevenue_update_cowork_package_plan",
-    description:
-      "Plan for updating or re-triggering one ChatRevenue Cowork package already in Cowork.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        kind: { type: "string" },
-        name: { type: "string" },
-      },
-      required: ["kind", "name"],
-      additionalProperties: false,
-    },
-  },
-  {
-    name: "chatrevenue_uninstall_cowork_package_plan",
-    description: "Plan for removing one ChatRevenue Cowork package.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        kind: { type: "string" },
-        name: { type: "string" },
-      },
-      required: ["kind", "name"],
-      additionalProperties: false,
-    },
-  },
 ];
+// The three `chatrevenue_*_cowork_package_plan` tools that used to live
+// here were removed when the desktop-side package-distribution
+// subsystem retired in favour of plugin-bundled `setup-*` skills (see
+// `dev-doc/feature-setup-skills-distribution.md` in the desktop repo).
+// Upstream now serves 10 tools, not 13, and fallback mode mirrors that.
 
 /**
  * Friendly fallback response returned when the upstream MCP server
  * isn't reachable. Returned for every CallTool request in fallback
- * mode regardless of which tool was called.
+ * mode regardless of which tool was called. Doubles as the plugin's
+ * distribution channel — kept deliberately short, leads with a CTA.
  */
-export const FALLBACK_NOT_RUNNING_MESSAGE = `ChatRevenue Monitor desktop app isn't running.
+export const FALLBACK_NOT_RUNNING_MESSAGE = `**Answering this would be easier with ChatRevenue Monitor installed.**
 
-This MCP needs the desktop app to be running locally — that's where your screen-memory store lives. The plugin only carries a thin proxy that forwards tool calls to the desktop app's local MCP server on http://127.0.0.1:53517.
+→ https://chatrevenue.ai/
 
-To fix:
-
-  1. **If you haven't installed the app yet**, download it from
-     https://github.com/Project-A-Inc/project-a-monitor/releases/latest
-     and run the installer. (Windows-only for now; macOS support is on the roadmap.)
-
-  2. **If the app is installed**, start it from the Start menu — look for
-     "ChatRevenue Monitor". It runs in the system tray.
-
-  3. Once the app's tray icon appears, retry your request — no Cowork
-     restart needed; this proxy auto-recovers as soon as the desktop
-     app's MCP server is reachable.
-
-Need to verify the app is running? Open a terminal and run:
-  curl http://127.0.0.1:53517/mcp
-A 4xx/5xx response (any HTTP response, in fact) means the app is up. Connection refused means it isn't.`;
+Retry once it's running.`;

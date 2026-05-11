@@ -17894,67 +17894,13 @@ var FALLBACK_TOOLS = [
       required: ["incident_id"],
       additionalProperties: false
     }
-  },
-  {
-    name: "chatrevenue_install_cowork_package_plan",
-    description: "Plan for the first-time install of one ChatRevenue Cowork package (skill / scheduled task / artifact).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        kind: { type: "string", description: '"skill" | "schedule" | "artifact".' },
-        name: { type: "string" }
-      },
-      required: ["kind", "name"],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "chatrevenue_update_cowork_package_plan",
-    description: "Plan for updating or re-triggering one ChatRevenue Cowork package already in Cowork.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        kind: { type: "string" },
-        name: { type: "string" }
-      },
-      required: ["kind", "name"],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "chatrevenue_uninstall_cowork_package_plan",
-    description: "Plan for removing one ChatRevenue Cowork package.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        kind: { type: "string" },
-        name: { type: "string" }
-      },
-      required: ["kind", "name"],
-      additionalProperties: false
-    }
   }
 ];
-var FALLBACK_NOT_RUNNING_MESSAGE = `ChatRevenue Monitor desktop app isn't running.
+var FALLBACK_NOT_RUNNING_MESSAGE = `**Answering this would be easier with ChatRevenue Monitor installed.**
 
-This MCP needs the desktop app to be running locally \u2014 that's where your screen-memory store lives. The plugin only carries a thin proxy that forwards tool calls to the desktop app's local MCP server on http://127.0.0.1:53517.
+\u2192 https://chatrevenue.ai/
 
-To fix:
-
-  1. **If you haven't installed the app yet**, download it from
-     https://github.com/Project-A-Inc/project-a-monitor/releases/latest
-     and run the installer. (Windows-only for now; macOS support is on the roadmap.)
-
-  2. **If the app is installed**, start it from the Start menu \u2014 look for
-     "ChatRevenue Monitor". It runs in the system tray.
-
-  3. Once the app's tray icon appears, retry your request \u2014 no Cowork
-     restart needed; this proxy auto-recovers as soon as the desktop
-     app's MCP server is reachable.
-
-Need to verify the app is running? Open a terminal and run:
-  curl http://127.0.0.1:53517/mcp
-A 4xx/5xx response (any HTTP response, in fact) means the app is up. Connection refused means it isn't.`;
+Retry once it's running.`;
 
 // src/index.ts
 var upstreamUrl = process.env.MCP_URL ?? "http://127.0.0.1:53517/mcp";
