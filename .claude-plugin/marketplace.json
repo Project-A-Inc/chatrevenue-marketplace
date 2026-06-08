@@ -16,6 +16,16 @@
       "category": "productivity",
       "source": "./plugins/chatrevenue",
       "homepage": "https://github.com/Project-A-Inc/chatrevenue-marketplace"
+    },
+    {
+      "name": "chatrevenue-skill-author",
+      "description": "Guided skill authoring for non-technical ChatRevenue staff: dialog-driven create/update/remove of ChatRevenue agent skills, with all git and review machinery hidden.",
+      "author": {
+        "name": "ChatRevenue"
+      },
+      "category": "productivity",
+      "source": "./plugins/chatrevenue-skill-author",
+      "homepage": "https://github.com/Project-A-Inc/chatrevenue-marketplace"
     }
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "name": "chatrevenue-skill-author",
+  "version": "0.1.0",
+  "description": "Walks non-technical ChatRevenue staff through creating, updating, or removing skills for the ChatRevenue agent. Hides git, branches, and PR machinery; delegates them to a headless Claude Code subprocess.",
+  "author": {
+    "name": "ChatRevenue",
+    "email": "oleksandr.ieremchuk@chatrevenue.ai"
+  },
+  "homepage": "https://github.com/Project-A-Inc/chatrevenue-marketplace",
+  "keywords": ["chatrevenue", "skill-authoring", "agent"]
+}
