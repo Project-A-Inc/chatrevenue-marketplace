@@ -3,6 +3,7 @@
 **Status:** draft, pending review
 **Date:** 2026-05-27
 **Revised:** 2026-06-08 — worker support folded in (see §1.1 and ADR 0003 in `nextcrm-agents`)
+**Revised:** 2026-06-08 — **Variant 1 hybrid handoff** (see §1.2); supersedes the auto-spawn mechanism in §5.2, §7.1 step 6–7, §7.4, and the env half of §8/§11
 **Author flow:** brainstormed via Cowork (`superpowers:brainstorming`)
 **Target plugin path:** `chatrevenue-marketplace/plugins/chatrevenue-skill-author/`
 **Depends on:** `project-a-skills` (Level 2 repo-side artifacts; see §6) + the worker-cadence frontmatter contract (see §1.1)
@@ -15,7 +16,7 @@
 
 The plugin takes the user from an informal request ("I want the agent to handle returns questions", or "every morning, draft me the day's priorities") through a guided dialog to a published pull request in `Project-A-Inc/project-a-skills`. The user's last on-screen artifact is a clickable PR URL with an explanation of what to do next.
 
-All git mechanics happen under the hood inside a headless Claude Code subprocess spawned by the plugin's main skill. The plugin itself is pure markdown — no MCP server, no JavaScript bundle, no esbuild.
+Git mechanics run through Claude Code on the user's native machine — **as of the 2026-06-08 Variant 1 revision (§1.2), via a paste-able handoff the user runs in their own Claude Code session**, not an auto-spawned subprocess (the original auto-spawn can't work on the Cowork-on-Windows sandbox). The plugin itself is pure markdown — no MCP server, no JavaScript bundle, no esbuild.
 
 ### 1.1 Workers are executable skills (added 2026-06-08)
 
@@ -30,6 +31,21 @@ interval_offline_min: 240     # how often it runs while the user is away;     op
 The legacy `schedule: "<cron>"` field is **retired** — the CLI accepts-and-warns on it during the migration window but never emits it. The authoritative frontmatter contract lives in `project-a-skills/docs/specs/2026-06-04-worker-cadence-frontmatter-design.md` (which mirrors `nextcrm-agents/design_docs/2026-06-04-presence-aware-worker-dispatch-design.md`).
 
 Consequence for this plugin: the authoring dialog must be able to produce these fields (§7.1, §10), `draft.json` must carry them (§7.3), and the user-facing vocabulary must describe "runs on its own / how often" without ever saying `executable`, `cron`, `interval`, `enroll`, or `dispatcher` (§12). Enrolment itself (turning a worker on for a given user) is **out of scope** — it happens in the agent/UI, not here; this plugin only authors the skill definition that *makes* a worker possible. **Ordering:** the agent-side contract and the `project-a-skills` CLI mirror land first (both are in flight); this plugin's worker dialog ships against the merged contract.
+
+### 1.2 Variant 1 — hybrid handoff (added 2026-06-08; supersedes the auto-spawn mechanism)
+
+Smoke testing surfaced a platform reality the original design didn't account for: on **Cowork-on-Windows**, the plugin skill's only shell is the **Cowork Linux sandbox**, not native Windows. Everything the skill runs there — `gh`, `git`, and a spawned `claude --headless` — executes *in the sandbox*, which (a) has no `gh`/SSH keys, (b) sees the `project-a-skills` clone over a Windows mount whose **git writes are blocked** (#55206) and whose `git status` is **unreliable** (#42520), and (c) **cannot reach the native-Windows Claude Code** — a `claude --headless` launched from the sandbox would run in the sandbox, against the same broken git. So the original "the plugin spawns a headless Claude Code that does git/PR" mechanism (§5.2, §7.1 step 6–7, §7.4) **cannot work on this platform.**
+
+**Decision (Variant 1):** the plugin does **not** spawn anything and does **not** run `gh`/`git` itself. It does what Cowork *can* do reliably — dialog, Layer-A validation, and writing the draft to the local stash (file writes to the mount work) — and then **hands the user a ready, paste-able prompt for their own native Claude Code**, which runs the existing `agent_helpers` chain (`preflight → new_branch → place_draft → open_pr`) on native Windows and ends with the PR URL.
+
+What this changes vs. the original design:
+
+- **No auto-spawn.** §7.1 step 6 "spawn `claude --headless`" and §7.4 are replaced by "write the stash + present the Claude Code handoff prompt." §5.2's rationale (spawn for git best-practices) still holds — git just runs in a **user-initiated** Claude Code session, not an auto-spawned one.
+- **Cowork-side pre-flight shrinks.** The env/repo checks in §8 (`gh`/`git`/`uv`/push-permission/working-tree/`agent_guide_version`) cannot run meaningfully in the sandbox and **move entirely to `agent_helpers/preflight.py`**, which runs natively on the Claude Code side. The Cowork-side keeps only what it can know (the `repo_root` config; intent). The env-related escalation codes in §11 likewise belong to the Claude Code side.
+- **Unchanged:** the `agent_helpers`, `AGENT_GUIDE.md`, the stash + `draft.json` schema, the worker dialog (§1.1), and the handoff-prompt *content* (it is now what the user pastes into Claude Code rather than a `--headless` body — nearly identical text).
+- **Cost:** the "no-git, one-click" promise is partially relaxed — the author runs one Claude Code step at the end. This is the only path that works on Cowork-on-Windows today. The fuller fix (open the PR via the **GitHub API**, no local git/Claude Code at all — Variant 2) is the recommended v2 target and is UX-neutral to swap in later; it was deferred to unblock now.
+
+This decision matches the repo-wide operating model already in use this session: **all git goes through native Claude Code; the Cowork sandbox never commits.**
 
 ## 2. Context
 

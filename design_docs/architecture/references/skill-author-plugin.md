@@ -43,48 +43,54 @@ Pure markdown — no MCP server, no JS bundle, no build step
 
 ## Contracts
 
-**The 7-step workflow (SKILL.md).** Gather intent → pre-flight → collect the
-skill (including whether it *runs on its own*) → Cowork-side validate → stash the
-draft → spawn the headless ship pipeline → hand the user the review link.
+**The workflow (SKILL.md).** Gather intent → light Cowork-side settle (`repo_root`
+only) → collect the skill (including whether it *runs on its own*) → Cowork-side
+validate → stash the draft → **hand the user a paste-able Claude Code prompt** →
+present the review link the user brings back.
 
-**`draft.json` (v2)** — the sidecar the Cowork side writes and the headless
-subprocess reads as the source of truth. Carries `type`/`scope`/`org_id`/`name`,
+**`draft.json` (v2)** — the sidecar the Cowork side writes and the user's Claude
+Code reads as the source of truth. Carries `type`/`scope`/`org_id`/`name`,
 `repo_root`, `pr_title`/`pr_body`, `source.{plugin,version,session_id}`, and an
 **optional `worker` object** (`executable: true` + optional positive-int
 `interval_online_min`/`interval_offline_min`). Absent `worker` ⇒ a plain skill.
 
-**Headless handoff.** The plugin spawns `claude --headless --cwd <repo_root>
---prompt-file handoff-prompt.md --env DRAFT_MANIFEST=<draft.json>`. The spawned
-agent reads `project-a-skills/docs/AGENT_GUIDE.md` (it requires
-`agent_guide_version: 1`) and runs the four helpers
-`preflight → new_branch → place_draft → open_pr`, returning `pr_url=<url>` on its
-last stdout line — which the plugin shows to the user.
+**Hybrid handoff (Variant 1).** The plugin does **not** spawn anything and does
+**not** run git/`gh` — on Cowork-on-Windows its shell is a Linux sandbox that
+can't git the Windows mount or reach native Claude Code. Instead it fills the
+`handoff-prompt.md` placeholders (the stash `draft.json` path + `repo_root`) and
+hands the user a copy-paste block to run **in their own Claude Code**, which reads
+`project-a-skills/docs/AGENT_GUIDE.md` (requires `agent_guide_version: 1`) and
+runs the four helpers `preflight → new_branch → place_draft → open_pr`, producing
+the `pr_url`. The user pastes the link back. See
+[decisions/0007](../decisions/0007-git-via-user-claude-code-handoff.md).
 
 **Cross-repo dependency.** The plugin is the authoring half of a two-repo feature:
 it depends on `project-a-skills` shipping `docs/AGENT_GUIDE.md` v1 + the four
 `scripts/agent_helpers/*.py` (the repo-side half, documented in that repo's
-`architecture/references/agent-automation.md`). Pre-flight check 10 enforces the
-guide version; a higher version escalates "the plugin needs to be updated".
+`architecture/references/agent-automation.md`). The real environment checks
+(`gh`/`git`/`uv`/push/clean-tree/guide version) run in `preflight.py` on the
+user's Claude Code side, not in Cowork.
 
 ## Lifecycle / flow
 
 ```
-user (Cowork chat)
-  │  plain-language dialog; worker intent detected or asked ("runs on its own?")
-  ▼
-SKILL.md  ── pre-flight ──▶ collect ──▶ Cowork-side validate ──▶ stash draft.json
-                                                                      │ spawn
-                                                                      ▼
-                                              claude --headless (cwd = project-a-skills clone)
-                                                  preflight → new_branch → place_draft → open_pr
-                                                                      │  pr_url=<url>
-                                                                      ▼
-                                              user clicks "Merge" → CI deploys to the Store
+user (Cowork chat)                              user's native Claude Code
+  │  dialog; worker intent detected/asked        (cwd = project-a-skills clone)
+  ▼                                                       ▲  paste the handoff
+SKILL.md ─ settle repo_root ─ collect ─ Cowork validate ─ stash draft.json
+  │                                                       │
+  └──────────────── hands a paste-able prompt ───────────┘
+                                                          ▼
+                              preflight → new_branch → place_draft → open_pr
+                                                          │  pr_url
+  user pastes link back ◀─────────────────────────────────┘
+  │
+  ▼  user clicks "Merge" → CI deploys to the Store
 ```
 
 Validation is **two-layer**: a Cowork-side LLM pre-filter for fast feedback, and
-the authoritative `cr-skills validate` run inside `place_draft.py`
-([decisions/0003](../decisions/0003-two-layer-validation.md)).
+the authoritative `cr-skills validate` run inside `place_draft.py` (on the Claude
+Code side) ([decisions/0003](../decisions/0003-two-layer-validation.md)).
 
 ## Analyze-chat skill (second skill)
 

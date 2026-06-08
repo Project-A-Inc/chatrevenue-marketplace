@@ -1,6 +1,6 @@
-# 0001 — Git work runs in a headless Claude Code subprocess, not the plugin's own bash
+# 0001 — Git work runs in Claude Code, not the plugin's own bash
 
-- **Status:** accepted
+- **Status:** accepted; **auto-spawn mechanism refined by [0007](0007-git-via-user-claude-code-handoff.md)** (2026-06-08). The core decision — git runs in Claude Code, never the plugin's own bash — stands; 0007 replaces the *auto-spawned* `claude --headless` with a *user-initiated* Claude Code handoff, because the Cowork-on-Windows sandbox can neither git the mount nor reach native Claude Code.
 - **Date:** 2026-06-08
 - **Source:** `engineering_plans/documented/2026-05-27-chatrevenue-skill-author-plugin.md` + `design_docs/2026-05-27-chatrevenue-skill-author-design.md` §5.2
 

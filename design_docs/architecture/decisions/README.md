@@ -23,3 +23,4 @@ never editing the old one away.
 | [0004](0004-single-skill-not-split.md) | One skill triggers create/update/remove/explore, not split | accepted |
 | [0005](0005-analyze-chat-second-skill-same-plugin.md) | Chat analysis ships as a second skill in the skill-author plugin, not a new plugin | accepted |
 | [0006](0006-analyze-chat-read-only-allowlist.md) | analyze-chat uses a read-only trace-tool command allowlist | accepted |
+| [0007](0007-git-via-user-claude-code-handoff.md) | Git/PR runs via a user-initiated Claude Code handoff, not an auto-spawned subprocess (refines 0001) | accepted |
