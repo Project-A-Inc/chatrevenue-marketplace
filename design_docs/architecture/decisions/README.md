@@ -12,9 +12,12 @@ never editing the old one away.
 > shipped in the `chatrevenue` plugin (the committed-bundle convention, the
 > stdio-proxy-not-direct-HTTP choice, the standalone-vs-desktop-dependent skill
 > tiers) are documented as rationale in the plugin/proxy READMEs and in the
-> reference docs, and are not backfilled here. The first ADRs will be recorded
-> when the next feature — `chatrevenue-skill-author` (Plan B) — is accepted.
+> reference docs, and are not backfilled here. The first ADRs below were recorded
+> when `chatrevenue-skill-author` (Plan B) was accepted.
 
 | # | Decision | Status |
 |---|----------|--------|
-| _(none yet — going-forward)_ | | |
+| [0001](0001-headless-claude-code-for-git.md) | Git work runs in a headless Claude Code subprocess, not the plugin's own bash | accepted |
+| [0002](0002-pure-markdown-no-mcp-server.md) | The skill-author plugin is pure markdown; no MCP server in v1 | accepted |
+| [0003](0003-two-layer-validation.md) | Two-layer validation: Cowork-side LLM pre-filter + authoritative `cr-skills` | accepted |
+| [0004](0004-single-skill-not-split.md) | One skill triggers create/update/remove/explore, not split | accepted |

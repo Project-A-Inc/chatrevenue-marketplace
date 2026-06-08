@@ -18,10 +18,11 @@ Today it ships one plugin, **`chatrevenue`** — a skills bundle for sales reps
 (screen-memory queries, watcher-fired activity help, ICP lead generation, plus
 setup skills that register Cowork-native scheduled tasks and artifacts) — wired
 to the **ChatRevenue Monitor desktop app** through a small committed
-stdio↔HTTP **proxy**. A second plugin, **`chatrevenue-skill-author`**, is
-designed (`design_docs/2026-05-27-chatrevenue-skill-author-design.md`) and in
-flight: its repo-side half shipped to `project-a-skills` (Plan A, documented),
-its plugin half is planned (Plan B).
+stdio↔HTTP **proxy**. A second plugin, **`chatrevenue-skill-author`**, lets
+non-technical staff author ChatRevenue agent skills (including workers) through a
+guided dialog that ends in a pull request — its repo-side half shipped to
+`project-a-skills` (Plan A) and its plugin half is the markdown bundle in this
+repo (Plan B). See [references/skill-author-plugin.md](references/skill-author-plugin.md).
 
 Two ideas carry the design. First, **a plugin is pure content plus a manifest**:
 skills are markdown (`SKILL.md` + companion files), and the only executable piece
@@ -71,15 +72,17 @@ code lives in `project-a-skills`.
 |---|---|---|
 | chatrevenue plugin | [references/chatrevenue-plugin.md](references/chatrevenue-plugin.md) | The plugin layout, the six skills (invocation vs setup), the desktop-app dependency model, and how setup skills register scheduled tasks/artifacts. |
 | Memory proxy | [references/memory-proxy.md](references/memory-proxy.md) | The stdio↔HTTP bridge to the desktop app's MCP server: why it exists, how it's wired via `.mcp.json`, the committed-bundle convention, graceful degradation. |
+| skill-author plugin | [references/skill-author-plugin.md](references/skill-author-plugin.md) | The `chatrevenue-skill-author` plugin: the 7-step authoring workflow, `draft.json` v2 (with workers), the headless Claude Code handoff, two-layer validation, and the cross-repo dependency on `project-a-skills`' helpers. |
 
-> Bootstrap note: `chatrevenue-skill-author` (the second plugin) is not yet
-> reflected here — its plugin half (Plan B) is unbuilt. When that work is
-> accepted, it gains a `references/skill-author-plugin.md` and its own ADRs. Its
-> repo-side half is documented in `project-a-skills/docs/architecture/`.
+> Cross-repo note: `chatrevenue-skill-author` is a two-repo feature. Its plugin
+> half is documented above; its repo-side half (`AGENT_GUIDE.md` + the
+> `agent_helpers`) is documented in
+> `project-a-skills/docs/architecture/references/agent-automation.md`.
 
 ## Decisions
 
 Why the non-obvious, **implemented** choices were made lives in the append-only
 ADR log at [decisions/](decisions/). The log is going-forward from this
-bootstrap; decisions already shipped in the `chatrevenue` plugin are documented
-in the plugin/proxy READMEs and are not backfilled as ADRs.
+bootstrap and now carries the `chatrevenue-skill-author` decisions (0001–0004);
+decisions already shipped in the `chatrevenue` plugin are documented in the
+plugin/proxy READMEs and are not backfilled as ADRs.
