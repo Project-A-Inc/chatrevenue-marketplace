@@ -37,17 +37,22 @@ try to fetch or build it yourself.
 ## 4. Credentials present
 
 ```
-test -f "<repo_root>/tools/langgraph_cli/.env"
+test -f "<repo_root>/.env"
 ```
 
-Failure → ask the author to drop the env file the team gave them into
-`<repo_root>/tools/langgraph_cli/.env`, then re-run. Do not create or guess the
-file. Never print its contents.
+The team-provided `.env` lives at the **repo root** (it is loaded into the tool's
+environment via `uv run --env-file "<repo_root>/.env"` — the tool's own dotenv
+loader only checks `tools/langgraph_cli/`, not the root; see
+`trace-tool-commands.md`).
+
+Failure → ask the author to drop the env file the team gave them at
+`<repo_root>/.env`, then re-run. Do not create or guess the file. Never print its
+contents.
 
 ## 5. Tool runs
 
 ```
-cd "<repo_root>/tools/langgraph_cli" && uv run langgraph-tool --help
+cd "<repo_root>/tools/langgraph_cli" && uv run --env-file "<repo_root>/.env" langgraph-tool --help
 ```
 
 Expected: exit 0, prints help. Failure → report the error to the author in

@@ -104,19 +104,22 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
 ```
 
 - **Fetch.** It drives the **vendored `langgraph_cli` trace tool** in
-  `project-a-skills` (`uv run langgraph-tool trace get-by-thread|get|list …`, cwd
-  = `<repo_root>/tools/langgraph_cli/` so the provided `.env` loads), dumping to a
-  gitignored `trace_dumps/`. The tool is documented as a vendored mirror in
-  `project-a-skills/docs/architecture/` (ADR 0006).
+  `project-a-skills` (`uv run --env-file <repo_root>/.env langgraph-tool trace
+  get-by-thread|get|list …`, cwd = `<repo_root>/tools/langgraph_cli/` so `uv`
+  resolves the tool's env), dumping to a gitignored `trace_dumps/`. The tool is
+  documented as a vendored mirror in `project-a-skills/docs/architecture/`
+  (ADR 0006).
 - **Analyze.** Cowork reads the LangSmith `Run` JSON and reasons over it — no MCP,
   no new engine (follows [decisions/0002](../decisions/0002-pure-markdown-no-mcp-server.md)).
 - **Read-only.** A strict command allowlist; never `assistant update*` /
   `thread update-state` ([decisions/0006](../decisions/0006-analyze-chat-read-only-allowlist.md)).
 - **Same plugin, not a new one** — same audience and `project-a-skills`
   dependency ([decisions/0005](../decisions/0005-analyze-chat-second-skill-same-plugin.md)).
-- **Credentials/privacy.** The team-provided `.env` (LangSmith key) lives at
-  `project-a-skills/tools/langgraph_cli/.env` (gitignored); the key is never
-  echoed, and dumps (possible customer data) stay in gitignored `trace_dumps/`.
+- **Credentials/privacy.** The team-provided `.env` (LangSmith key) lives at the
+  `project-a-skills` **repo root** and is injected via `uv run --env-file` (the
+  tool's own dotenv only reads `tools/langgraph_cli/`, not the root); the root
+  `.env` is gitignored, the key is never echoed, and dumps (possible customer
+  data) stay in gitignored `trace_dumps/`.
 - Design spec: `design_docs/2026-06-08-chatrevenue-analyze-chat-design.md`.
 
 ## Constraints & decisions

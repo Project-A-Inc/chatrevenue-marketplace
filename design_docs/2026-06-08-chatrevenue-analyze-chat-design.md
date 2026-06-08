@@ -77,11 +77,12 @@ author (Cowork chat)
   │  "analyze thread <id>" / "show me recent chats where X failed"
   ▼
 chatrevenue-analyze-chat (Cowork skill, pure markdown)
-  │  light pre-flight (uv, vendored tool, .env, repo_root)
-  │  uv run langgraph-tool trace get-by-thread <id> -o trace_dumps/<id>.txt
+  │  light pre-flight (uv, vendored tool, repo-root .env, repo_root)
+  │  cwd=tools/langgraph_cli/  uv run --env-file <repo_root>/.env \
+  │      langgraph-tool trace get-by-thread <id> -o <repo_root>/trace_dumps/<id>.json
   ▼
-project-a-skills/tools/langgraph_cli/   (vendored mirror; reads .env there)
-  │  → LangSmith API (LANGSMITH_API_KEY)
+project-a-skills/tools/langgraph_cli/   (vendored mirror; run here for uv project resolution)
+  │  creds injected from repo-root .env via uv --env-file → LangSmith API (LANGSMITH_API_KEY)
   ▼
 project-a-skills/trace_dumps/<id>.txt   (LangSmith Run JSON; gitignored)
   │  Cowork reads + reasons over the dump
@@ -105,38 +106,64 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
     analysis-playbook.md         common author questions → how to answer from a dump
 
 # in project-a-skills (vendored tool + creds + output)
+.env                             provided by the team; at the REPO ROOT; gitignored
 tools/langgraph_cli/             mirror of project-a-common/tools/langgraph_cli
   langgraph_cli/, pyproject.toml, uv.lock, README.md, .env.example
-  .env                           provided by the team; gitignored
 trace_dumps/                     dump output; gitignored
 ```
 
 ## 6. Credentials
 
-The team hands authors a ready `.env` file; the author drops it at
-`project-a-skills/tools/langgraph_cli/.env` (the location the tool already loads
-via `python-dotenv`, matching its `.env.example`). It carries `LANGSMITH_API_KEY`
-(and the other LangSmith keys the tool reads). The file is gitignored; the skill
-never prints the key into chat. Thread-level commands additionally need deployment
-access (`LANGGRAPH_API_URL` / bearer) — only required if `thread get-history` is
-used; trace commands work with the LangSmith key alone.
+The team hands authors a ready `.env` file; the author drops it at the
+**`project-a-skills` repo root** (`<repo_root>/.env`). It carries
+`LANGSMITH_API_KEY` (and the other LangSmith keys the tool reads). The root
+`.env` is already covered by the repo's existing `.gitignore` `.env` pattern; the
+skill never prints the key into chat.
+
+**Why the root needs `--env-file`.** The vendored tool hardcodes its dotenv path
+to its own directory:
+
+```python
+# cli.py — unchanged (mirror, never fork; see §8)
+env_path = Path(__file__).parent.parent / ".env"   # tools/langgraph_cli/.env
+load_dotenv(dotenv_path=env_path)
+```
+
+It does **not** walk up to the repo root, so a root `.env` is not auto-loaded.
+Rather than edit the tool (forbidden — it's a mirror), the skill injects the
+root `.env` into the process environment when it runs the tool:
+
+```
+cd <repo_root>/tools/langgraph_cli
+uv run --env-file <repo_root>/.env langgraph-tool <command> …
+```
+
+`uv run --env-file` (uv ≥ 0.11) loads the file into the environment before the
+tool starts; the tool's `os.getenv("LANGSMITH_API_KEY")` then finds it. The
+tool's own `load_dotenv` on the (absent) `tools/langgraph_cli/.env` is a no-op
+and never overrides the already-set vars. cwd stays `tools/langgraph_cli/` so
+`uv run` resolves the **tool's** environment, not the repo's.
+
+Thread-level commands additionally need deployment access (`LANGGRAPH_API_URL` /
+bearer) — only required if `thread get-history` is used; trace commands work with
+the LangSmith key alone.
 
 ## 7. The skill workflow
 
 1. **Understand the request** — which conversation, and what the author wants to
    learn. Accept a thread id, a trace id, or "I don't have an id".
 2. **Pre-flight (light)** — verify `uv` is installed; the vendored tool exists at
-   `<repo_root>/tools/langgraph_cli/`; `.env` is present there (if not, ask the
-   author to drop the provided env file in — recoverable, do not escalate);
-   `repo_root` is known (reuse the `chatrevenue-skill-author` config; do not
-   re-ask). Run silently; surface only blockers.
-3. **Locate the chat** —
-   - thread id → `uv run langgraph-tool trace get-by-thread <id> --verbose -o trace_dumps/<id>.txt`
-   - trace id → `uv run langgraph-tool trace get <id> -o trace_dumps/<id>.txt`
-   - no id → `uv run langgraph-tool trace list --limit <n> [--project <p>]`, show
+   `<repo_root>/tools/langgraph_cli/`; the `.env` is present at the **repo root**
+   `<repo_root>/.env` (if not, ask the author to drop the provided env file there
+   — recoverable, do not escalate); `repo_root` is known (reuse the
+   `chatrevenue-skill-author` config; do not re-ask). Run silently; surface only
+   blockers.
+3. **Locate the chat** — all runs with cwd = `<repo_root>/tools/langgraph_cli/`
+   and `--env-file <repo_root>/.env` (see §6):
+   - thread id → `uv run --env-file <repo_root>/.env langgraph-tool trace get-by-thread <id> --verbose -o <repo_root>/trace_dumps/<id>.json`
+   - trace id → `uv run --env-file <repo_root>/.env langgraph-tool trace get <id> --full -o <repo_root>/trace_dumps/<id>.json`
+   - no id → `uv run --env-file <repo_root>/.env langgraph-tool trace list --limit <n> [--project <p>]`, show
      the author a short list, let them pick, then fetch.
-   All runs happen with cwd = `<repo_root>/tools/langgraph_cli/` so the `.env`
-   loads.
 4. **Analyze** — read the dumped LangSmith `Run` JSON (`run_type` ∈
    tool/chain/llm, `inputs`/`outputs`, `child_runs`, `error`, `extra`) and answer
    the author's questions: did a given skill load/trigger, what tools were called
@@ -171,7 +198,9 @@ the validator posture (`nextcrm-agents` ADR 0009).
 
 ## 10. Constraints
 
-- **Secrets:** `.env` gitignored; the LangSmith key is never echoed to chat.
+- **Secrets:** the root `.env` is gitignored (existing `.env` pattern); the
+  LangSmith key is never echoed to chat and never passed on the command line —
+  only via `uv run --env-file`.
 - **Privacy:** trace dumps may contain customer data — kept in gitignored
   `trace_dumps/`, never committed, and not pasted into chat beyond what answering
   the author's question requires.
@@ -191,8 +220,10 @@ the validator posture (`nextcrm-agents` ADR 0009).
 - Default `trace list --limit` and whether a `--project` default is baked in.
 - Whether pre-flight reuses `chatrevenue-skill-author`'s `config.json` verbatim or
   keeps its own `repo_root` key in the same file.
-- `.gitignore` edits in `project-a-skills` for `tools/langgraph_cli/.env` and
-  `trace_dumps/` (confirm not already covered).
+- **Resolved:** `.env` lives at the `project-a-skills` **repo root** and is loaded
+  via `uv run --env-file <repo_root>/.env` (§6). The root `.env` is already
+  covered by the repo's `.gitignore` `.env` pattern; **`trace_dumps/` still needs
+  adding to `.gitignore`** (it is not covered today).
 
 ## 12. References
 

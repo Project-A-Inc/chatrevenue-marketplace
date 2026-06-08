@@ -52,22 +52,25 @@ entry points:
 
 Run the checks in `references/preflight-checklist.md`. Briefly: `uv` is
 installed; the bundled trace tool exists at `<repo_root>/tools/langgraph_cli/`;
-its `.env` is present (if not, ask the author to drop the env file the team
-gave them into `<repo_root>/tools/langgraph_cli/.env` — this is recoverable,
-walk them through it, don't treat it as a hard failure); `repo_root` is known
-(reuse the `chatrevenue-skill-author` config — do not re-ask).
+the team-provided `.env` is present at the **repo root** `<repo_root>/.env` (if
+not, ask the author to drop the env file the team gave them there — this is
+recoverable, walk them through it, don't treat it as a hard failure);
+`repo_root` is known (reuse the `chatrevenue-skill-author` config — do not
+re-ask).
 
 Run silently; surface only blockers.
 
 ### Step 3 — Fetch the conversation
 
 Use only the read-only commands in `references/trace-tool-commands.md`, run
-with the working directory set to `<repo_root>/tools/langgraph_cli/` so the
-`.env` loads, writing the dump into `<repo_root>/trace_dumps/`:
+with the working directory set to `<repo_root>/tools/langgraph_cli/` (so `uv`
+resolves the tool's own env) and `--env-file "<repo_root>/.env"` on every call
+(so the root `.env` creds reach the tool), writing the dump into
+`<repo_root>/trace_dumps/`:
 
-- thread id → `uv run langgraph-tool trace get-by-thread <id> --verbose -o <repo_root>/trace_dumps/<id>.json`
-- trace id → `uv run langgraph-tool trace get <id> --full -o <repo_root>/trace_dumps/<id>.json`
-- neither → `uv run langgraph-tool trace list --limit <n> [--project <p>]`, show
+- thread id → `uv run --env-file "<repo_root>/.env" langgraph-tool trace get-by-thread <id> --verbose -o <repo_root>/trace_dumps/<id>.json`
+- trace id → `uv run --env-file "<repo_root>/.env" langgraph-tool trace get <id> --full -o <repo_root>/trace_dumps/<id>.json`
+- neither → `uv run --env-file "<repo_root>/.env" langgraph-tool trace list --limit <n> [--project <p>]`, show
   the author a short summary of recent conversations, let them pick, then fetch
   by the chosen id.
 
@@ -105,8 +108,9 @@ flow; you only diagnose.
 - **Read-only.** Only the commands in `references/trace-tool-commands.md`. Never
   `assistant update*`, `thread update-state`, or any mutating/assistant-management
   command.
-- Never invoke the trace tool from outside `<repo_root>/tools/langgraph_cli/`
-  (the `.env` won't load) and never pass credentials on the command line.
+- Always invoke the trace tool with cwd `<repo_root>/tools/langgraph_cli/` (so
+  `uv` resolves the tool's env) and `--env-file "<repo_root>/.env"` (so the root
+  creds load). Never pass credentials on the command line.
 - You diagnose; you do not author skills yourself — hand off to
   `chatrevenue-skill-author` for any skill change.
 
