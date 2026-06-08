@@ -15,6 +15,11 @@ authoritative validation rules (owned by the agent — see
 `nextcrm-agents` ADR 0009), or worker **enrolment** (the agent/UI, downstream of
 merge).
 
+The plugin ships **two skills**: `chatrevenue-skill-author` (the authoring flow,
+documented in the bulk of this reference) and `chatrevenue-analyze-chat` (a
+read-only skill for inspecting real agent conversations to decide what to author
+— see [§ Analyze-chat skill](#analyze-chat-skill-second-skill)).
+
 ## Structure
 
 ```
@@ -80,6 +85,39 @@ SKILL.md  ── pre-flight ──▶ collect ──▶ Cowork-side validate ─
 Validation is **two-layer**: a Cowork-side LLM pre-filter for fast feedback, and
 the authoritative `cr-skills validate` run inside `place_draft.py`
 ([decisions/0003](../decisions/0003-two-layer-validation.md)).
+
+## Analyze-chat skill (second skill)
+
+`chatrevenue-analyze-chat` lets an author point at a real ChatRevenue agent
+conversation, have Cowork fetch its trace dump, and answer questions about it —
+"did the `<name>` skill trigger?", "where did the agent go wrong?" — to inform
+what skill to author. It closes the loop back to `chatrevenue-skill-author`.
+
+```
+plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
+  SKILL.md
+  references/
+    preflight-checklist.md   uv / vendored-tool / .env / repo_root checks
+    trace-tool-commands.md   read-only command allowlist + invocation forms
+    dump-schema.md           LangSmith Run JSON shape, for analysis
+    analysis-playbook.md     common author questions → how to answer from a dump
+```
+
+- **Fetch.** It drives the **vendored `langgraph_cli` trace tool** in
+  `project-a-skills` (`uv run langgraph-tool trace get-by-thread|get|list …`, cwd
+  = `<repo_root>/tools/langgraph_cli/` so the provided `.env` loads), dumping to a
+  gitignored `trace_dumps/`. The tool is documented as a vendored mirror in
+  `project-a-skills/docs/architecture/` (ADR 0006).
+- **Analyze.** Cowork reads the LangSmith `Run` JSON and reasons over it — no MCP,
+  no new engine (follows [decisions/0002](../decisions/0002-pure-markdown-no-mcp-server.md)).
+- **Read-only.** A strict command allowlist; never `assistant update*` /
+  `thread update-state` ([decisions/0006](../decisions/0006-analyze-chat-read-only-allowlist.md)).
+- **Same plugin, not a new one** — same audience and `project-a-skills`
+  dependency ([decisions/0005](../decisions/0005-analyze-chat-second-skill-same-plugin.md)).
+- **Credentials/privacy.** The team-provided `.env` (LangSmith key) lives at
+  `project-a-skills/tools/langgraph_cli/.env` (gitignored); the key is never
+  echoed, and dumps (possible customer data) stay in gitignored `trace_dumps/`.
+- Design spec: `design_docs/2026-06-08-chatrevenue-analyze-chat-design.md`.
 
 ## Constraints & decisions
 

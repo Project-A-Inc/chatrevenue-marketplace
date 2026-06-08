@@ -20,9 +20,11 @@ setup skills that register Cowork-native scheduled tasks and artifacts) — wire
 to the **ChatRevenue Monitor desktop app** through a small committed
 stdio↔HTTP **proxy**. A second plugin, **`chatrevenue-skill-author`**, lets
 non-technical staff author ChatRevenue agent skills (including workers) through a
-guided dialog that ends in a pull request — its repo-side half shipped to
-`project-a-skills` (Plan A) and its plugin half is the markdown bundle in this
-repo (Plan B). See [references/skill-author-plugin.md](references/skill-author-plugin.md).
+guided dialog that ends in a pull request, and (via a second skill,
+`chatrevenue-analyze-chat`) lets them read and analyze real agent conversations
+to inform that authoring — its repo-side half shipped to `project-a-skills`
+(Plan A; plus a vendored trace tool) and its plugin half is the markdown bundle
+in this repo (Plan B). See [references/skill-author-plugin.md](references/skill-author-plugin.md).
 
 Two ideas carry the design. First, **a plugin is pure content plus a manifest**:
 skills are markdown (`SKILL.md` + companion files), and the only executable piece
@@ -72,7 +74,7 @@ code lives in `project-a-skills`.
 |---|---|---|
 | chatrevenue plugin | [references/chatrevenue-plugin.md](references/chatrevenue-plugin.md) | The plugin layout, the six skills (invocation vs setup), the desktop-app dependency model, and how setup skills register scheduled tasks/artifacts. |
 | Memory proxy | [references/memory-proxy.md](references/memory-proxy.md) | The stdio↔HTTP bridge to the desktop app's MCP server: why it exists, how it's wired via `.mcp.json`, the committed-bundle convention, graceful degradation. |
-| skill-author plugin | [references/skill-author-plugin.md](references/skill-author-plugin.md) | The `chatrevenue-skill-author` plugin: the 7-step authoring workflow, `draft.json` v2 (with workers), the headless Claude Code handoff, two-layer validation, and the cross-repo dependency on `project-a-skills`' helpers. |
+| skill-author plugin | [references/skill-author-plugin.md](references/skill-author-plugin.md) | The `chatrevenue-skill-author` plugin and both its skills: the 7-step authoring workflow (`draft.json` v2 with workers, headless Claude Code handoff, two-layer validation) and the read-only `chatrevenue-analyze-chat` skill (drives the vendored trace tool to fetch + analyze real agent conversations). |
 
 > Cross-repo note: `chatrevenue-skill-author` is a two-repo feature. Its plugin
 > half is documented above; its repo-side half (`AGENT_GUIDE.md` + the

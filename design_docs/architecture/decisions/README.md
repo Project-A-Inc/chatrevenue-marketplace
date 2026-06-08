@@ -21,3 +21,5 @@ never editing the old one away.
 | [0002](0002-pure-markdown-no-mcp-server.md) | The skill-author plugin is pure markdown; no MCP server in v1 | accepted |
 | [0003](0003-two-layer-validation.md) | Two-layer validation: Cowork-side LLM pre-filter + authoritative `cr-skills` | accepted |
 | [0004](0004-single-skill-not-split.md) | One skill triggers create/update/remove/explore, not split | accepted |
+| [0005](0005-analyze-chat-second-skill-same-plugin.md) | Chat analysis ships as a second skill in the skill-author plugin, not a new plugin | accepted |
+| [0006](0006-analyze-chat-read-only-allowlist.md) | analyze-chat uses a read-only trace-tool command allowlist | accepted |
