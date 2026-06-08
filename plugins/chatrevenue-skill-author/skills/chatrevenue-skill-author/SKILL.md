@@ -41,22 +41,21 @@ language.** This is an invariant from `project-a-skills/CONTRIBUTING.md`.
 Walk the steps below in order. Do NOT dump the workflow to the user.
 Proceed conversationally, one step at a time.
 
-### Step 1 — Pre-flight
+### Step 1 — Light pre-flight (Cowork-side only)
 
-Before any conversation about the skill itself, verify the user's
-machine is ready. Run the checks from `references/preflight-checklist.md`
-in order. On any failure, hand the user the message from
-`references/escalation-template.md` filled in with the appropriate
-category code and details, then stop.
+> **Variant 1 (2026-06-08).** You run inside Cowork — on Cowork-on-Windows that
+> is a Linux sandbox that **cannot** run `gh`/`git`, cannot write git on the
+> Windows mount, and cannot reach the user's native Claude Code. So you do **not**
+> verify the environment here. The real environment checks (`gh`, `git`, `uv`,
+> push permission, clean working tree, `agent_guide_version`) run later in
+> `scripts/agent_helpers/preflight.py` on the user's **native Claude Code** side
+> (Step 6). See `references/preflight-checklist.md`.
 
-Tell the user once at the start: "Checking everything is ready..."
-Do not list what passed.
-
-If a check is recoverable (`PREREQ_CLAUDE_MISSING`,
-`PREREQ_GH_MISSING`, `PREREQ_UV_MISSING`, `PREREQ_GH_UNAUTH`,
-`PREREQ_REPO_NOT_FOUND`), walk the user through the fix in plain
-language, then re-run the check. Do not silently self-heal — explain
-what you're doing and confirm before each install/login step.
+The only thing to settle up front is the **repo location**: read `repo_root` from
+the config (`<state-dir>/config.json`). If it's missing, ask the user where their
+local copy of the ChatRevenue skills project is, and save it. Don't run any
+`gh`/`git`/`uv` checks yourself — they're not meaningful from here. Then move on
+to the conversation about the skill.
 
 ### Step 2 — Understand intent
 
@@ -146,42 +145,40 @@ Files in the stash:
 
 For `type: remove`, only `draft.json` is needed.
 
-### Step 6 — Ship via headless Claude Code
+### Step 6 — Hand off to the user's Claude Code (Variant 1)
 
-Read the repo path from the config file (`<state-dir>/config.json`).
-If absent, ask the user where their local clone of project-a-skills
-lives; offer `gh repo clone Project-A-Inc/project-a-skills <path>` if
-they don't have one. Save the path to config.
+You do **not** run git/`gh` and do **not** spawn anything — none of that works from
+the Cowork sandbox (§1.2 of the design). Instead you hand the user a ready prompt
+to run in **their own Claude Code**, which does the real pre-flight + git + PR.
 
-Spawn the subprocess with the prompt from
-`references/handoff-prompt.md`:
+1. Confirm the draft is stashed (Step 5): `SKILL.md` + `references/` (create/update)
+   + `draft.json` are written under the state dir.
+2. Build the handoff prompt from `references/handoff-prompt.md`, substituting the
+   stash `draft.json` path and the `repo_root`. Present it to the user as a
+   copy-paste block, with plain instructions:
 
-```bash
-claude --headless \
-  --cwd "<repo_root>" \
-  --prompt-file "${CLAUDE_PLUGIN_ROOT}/skills/chatrevenue-skill-author/references/handoff-prompt.md" \
-  --env DRAFT_MANIFEST="<stash-folder>/draft.json"
-```
+   > Almost done. To send this for review, open Claude Code in your ChatRevenue
+   > skills project and paste this in. It'll run the last steps and give you a
+   > review link:
+   >
+   > ```
+   > <the handoff prompt, with DRAFT_MANIFEST=<stash>/draft.json and repo_root filled in>
+   > ```
 
-(Exact `claude` flag names are verified at first invocation; the
-contract is "non-interactive, with cwd, prompt-file, and one env var".)
+   Say "the last steps" / "a review link" — never "headless", "subprocess",
+   "branch", "commit", "PR".
+3. When the user comes back with the review link (the `pr_url` Claude Code prints),
+   present it with the closing language from `references/user-dialog-phrases.md`,
+   and move the stash folder from `drafts/` to `drafts/.archive/` (keep last 10).
 
-Tell the user only: "Sending it for review..."
+If the user reports that Claude Code stopped with a technical block, relay the
+guidance from `references/escalation-template.md` — but note the env failures now
+originate on the Claude Code side (its `preflight.py`), not here.
 
-Wait for the subprocess to exit. Parse the last line of stdout. It
-should be `pr_url=<https-url>`. If it is:
+### Step 7 — Closing (after the user runs the handoff)
 
-1. Move the stash folder from `drafts/` to `drafts/.archive/`,
-   rotating to keep last 10
-2. Present the URL to the user with the language from
-   `references/user-dialog-phrases.md`
-
-If it isn't, or if the subprocess exited non-zero, escalate with
-`CLAUDE_SPAWN_FAILED` and the captured stderr.
-
-### Step 7 — Hand off to the user
-
-Show the PR URL and explain in plain language:
+Once the user pastes back the review link their Claude Code produced, show it and
+explain in plain language:
 
 > Done. Your draft is here: <url>
 >
@@ -197,13 +194,14 @@ If language is not English, use the corresponding phrases from
 When the user only wants to browse:
 
 1. Skip pre-flight (no mutation will happen)
-2. Read the contents of the relevant `skills/` subtree via
-   `gh api repos/Project-A-Inc/project-a-skills/contents/skills/<scope>/`
-   (use the user's `gh auth` — no extra config)
-3. For each entry, fetch the SKILL.md and read its `description`
+2. Read the skills straight from the user's local clone — the
+   `<repo_root>/skills/<scope>/` tree is mounted and readable from here. List the
+   skill folders and read each `SKILL.md`'s frontmatter. (Do **not** use `gh api`
+   — `gh` isn't available in the Cowork sandbox; the local files are.)
+3. For each entry, read its `name` + `description`
 4. Summarize back to the user in plain language: name, what it does,
    one example trigger phrase
-5. Do not stash, do not spawn
+5. Do not stash, do not hand off (nothing to ship)
 
 ## Hard rules
 
@@ -211,13 +209,13 @@ When the user only wants to browse:
   `references/user-dialog-phrases.md` when talking to the user.
 - Never invent a skill name. Either the user picks one, or you propose
   2-3 options matching `^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]?$`.
-- Never bypass the helpers in step 6. The Claude Code subprocess does
-  git; you never invoke `git` or `gh push` directly.
+- Never run `git`/`gh` or spawn anything yourself. Git/PR happens only in the
+  user's own Claude Code (Step 6), via the `agent_helpers`. You author + stash +
+  hand off.
 - Authored skill content (SKILL.md + references/) is English only.
-- On any unexpected error during steps 1-6, fill in
-  `references/escalation-template.md` with the right category code
-  and stop. Do not retry beyond the recoverable categories listed in
-  step 1.
+- On a Cowork-side error (e.g., can't write the stash), explain it plainly and
+  stop. Environment/git failures surface on the Claude Code side — relay the
+  `references/escalation-template.md` guidance if the user reports one.
 
 ## References
 

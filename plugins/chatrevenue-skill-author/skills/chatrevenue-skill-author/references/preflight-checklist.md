@@ -1,13 +1,17 @@
 # Pre-flight checklist
 
-Run these checks in order via the Bash tool before any conversation about
-the user's skill. Stop on the first failure. Use `escalation-template.md`
-for any non-recoverable failure.
+> **Variant 1 (2026-06-08): these run on the Claude Code side, NOT in Cowork.**
+> On Cowork-on-Windows the skill's shell is a Linux sandbox with no `gh`, no SSH
+> keys, blocked git on the Windows mount, and an unreliable `git status` — so none
+> of the checks below are meaningful from Cowork. They are exactly the checks
+> `scripts/agent_helpers/preflight.py` performs on the user's **native Claude Code**
+> when it runs the ship handoff (SKILL.md Step 6). This file is kept as the
+> human-readable spec of *what* gets verified and *which* category each failure
+> maps to (used by `escalation-template.md`) — the Cowork-side skill itself only
+> settles `repo_root` (SKILL.md Step 1) and does not execute these.
 
 Each check below is a single shell command followed by what to do on
-failure. Run them silently — do not narrate each pass to the user. Say
-"Checking everything is ready..." once at the start; on success, move
-to step 2 of the workflow.
+failure (as run by `preflight.py` on the Claude Code side).
 
 ## 1. Claude Code CLI installed
 

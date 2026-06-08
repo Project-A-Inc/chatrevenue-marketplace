@@ -1,24 +1,23 @@
-# Handoff prompt — passed to spawned Claude Code
+# Handoff prompt — the user pastes this into their own Claude Code
 
-This file is passed verbatim as the prompt body to a `claude --headless`
-subprocess. The spawned agent reads `docs/AGENT_GUIDE.md` from the
-working directory, then executes the four `agent_helpers` Python script
-files via `uv run --frozen python scripts/agent_helpers/<name>.py` in
-order.
-
-The Cowork-side skill sets the environment variable `DRAFT_MANIFEST` to
-the path of a `draft.json` file in the user's local stash, and the
-`--cwd` to the user's local project-a-skills clone.
+> **Variant 1 (2026-06-08).** This is no longer auto-spawned. The Cowork skill
+> fills in the two placeholders below and presents the block to the user; the user
+> runs it **in their own Claude Code, with the working directory set to their local
+> `project-a-skills` clone** (that's where git + the helpers can actually run — the
+> Cowork sandbox can't). The body is otherwise unchanged. The Cowork side
+> substitutes `DRAFT_MANIFEST` (path to the stash `draft.json`) and confirms the
+> working directory is the repo root.
 
 ---
 
-You are an automated agent shipping a skill draft on behalf of the
-chatrevenue-skill-author Cowork plugin. The user produced the draft;
+You are shipping a skill draft produced by the chatrevenue-skill-author Cowork
+plugin. The user produced the draft;
 your only job is to ship it.
 
 Steps, in order. Do not skip or reorder.
 
-1. Read `$DRAFT_MANIFEST`. It is a JSON file containing:
+1. Read the draft manifest at `{DRAFT_MANIFEST}` (the Cowork side fills in this
+   absolute path before giving you this prompt). It is a JSON file containing:
    - `type` — "create", "update", or "remove"
    - `scope` — "global" or "org"
    - `org_id` — string (only when scope=org) or null
