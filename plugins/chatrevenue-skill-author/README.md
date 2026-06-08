@@ -13,8 +13,9 @@ run. For reference, the full list:
 
 1. **Node.js 18+** on PATH (Cowork plugin runtime; usually already
    present alongside the existing `chatrevenue` plugin)
-2. **Claude Code CLI** — used as a headless git/PR runner under the
-   hood (https://claude.com/code)
+2. **Claude Code CLI** — the user runs one paste-able step in their own
+   Claude Code to do the git/PR (Variant 1 hybrid handoff; the Cowork
+   sandbox can't do git on Windows — see the design doc) (https://claude.com/code)
 3. **GitHub CLI (`gh`)** — install per OS; the plugin guides through
    `gh auth login`
 4. **uv** (Python package manager) — used by the repo's
@@ -33,18 +34,20 @@ User: "I want the agent to handle returns questions."
 
 Plugin: [a few questions about behavior and trigger phrases]
 
-Plugin: "Checking everything is ready..."
-Plugin: "Getting the latest version of the skills project..."
-Plugin: "Preparing a separate copy for your skill..."
-Plugin: "Sending it for review..."
+Plugin: [collects the skill, validates it in the chat]
+Plugin: "Almost done — open Claude Code in your skills project and paste
+         this to send it for review: <ready prompt>"
+
+User: [runs it in Claude Code, pastes back the review link]
 
 Plugin: "Done. Your draft is here: https://github.com/.../pull/123
          Open the link, take a look, and click the green 'Merge'
          button when you're ready."
 ```
 
-No "branch", "commit", "PR", "merge", "Claude Code", "MCP" ever
-appears in user-facing messages. The same applies to worker skills
+The git/PR step runs in the user's own Claude Code (Variant 1 hybrid handoff),
+because the Cowork sandbox can't do git on the Windows mount. Even so, no
+"branch", "commit", "PR", "merge", "MCP" leaks into the conversation. The same applies to worker skills
 (ones that run on their own): the user is asked whether it should "run
 on its own" and "how often", never about `executable`, intervals, or
 cron.

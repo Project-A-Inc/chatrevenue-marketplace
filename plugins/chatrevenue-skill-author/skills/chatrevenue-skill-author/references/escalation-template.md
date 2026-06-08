@@ -5,6 +5,14 @@ emit the message below to the user. The technical block stays in
 English regardless of dialog language, so the AI team always sees the
 same format.
 
+> **Variant 1 (2026-06-08).** The environment/git categories below
+> (`PREREQ_*`, `WORK_TREE_DIRTY`, `GH_PR_CREATE_FAILED`, `VALIDATION_REPO_SIDE_FAILED`,
+> `AGENT_GUIDE_VERSION_MISMATCH`) now surface on the user's **Claude Code** side
+> (its `preflight.py`/helpers), not in Cowork — the user pastes the failure back
+> and you relay it with this template. Cowork-side, the only failures you raise
+> yourself are local ones (e.g. can't write the draft stash). `CLAUDE_SPAWN_FAILED`
+> is retired (nothing is spawned).
+
 ## Default English template
 
 Use the text below verbatim. Substitute the placeholders.
