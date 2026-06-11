@@ -4,9 +4,9 @@
 
 Let non-technical ChatRevenue staff (PM, sales, support) create, update, remove,
 or browse ChatRevenue agent skills — including **workers** (skills that run on
-their own) — through a plain-language Cowork dialog that ends with a clickable
-review link, **without ever seeing git, branches, pull requests, or the Claude
-Code CLI**. It owns the user-facing dialog, the local draft, the Cowork-side
+their own) and **dashboard widgets** (a worker plus a dashboard surface) —
+through a plain-language Cowork dialog that ends with a clickable review link,
+**without ever seeing git, branches, pull requests, or the Claude Code CLI**. It owns the user-facing dialog, the local draft, the Cowork-side
 pre-validation, and the handoff that spawns a headless Claude Code subprocess. It
 does **not** own the git/PR mechanics (delegated to `project-a-skills`'
 `scripts/agent_helpers/` via the headless subprocess — see
@@ -34,7 +34,8 @@ plugins/chatrevenue-skill-author/
       branch-naming.md             what the helper produces; what to say instead
       escalation-template.md       verbatim tech-problem block + category codes
       handoff-prompt.md            the prompt body passed to `claude --headless`
-      handoff-manifest.md          draft.json schema (v2, with the worker object)
+      handoff-manifest.md          draft.json schema (v2; worker object + widget.json reference rule)
+      widget-archetypes.md         the 3 dashboard-widget archetypes + field prompts (Step 3 widget branch)
       user-dialog-phrases.md       UX vocabulary (never/instead, EN + RU) + worker phrases
 ```
 
@@ -53,6 +54,26 @@ Code reads as the source of truth. Carries `type`/`scope`/`org_id`/`name`,
 `repo_root`, `pr_title`/`pr_body`, `source.{plugin,version,session_id}`, and an
 **optional `worker` object** (`executable: true` + optional positive-int
 `interval_online_min`/`interval_offline_min`). Absent `worker` ⇒ a plain skill.
+
+**Dashboard widgets.** A widget is a worker **with a dashboard surface**. The
+author never hand-writes a layout: they pick one of three **archetypes** —
+*Counters + list*, *Single KPI*, *Ranked cards* (`references/widget-archetypes.md`)
+— and name a few fields in plain language; the plugin fills the chosen skeleton.
+The result is a normal `create` draft that additionally sets `widget: true` in
+`SKILL.md` and carries a `references/widget.json = { id, schema, layout }`, where
+`layout` is the frontend-published DSL (`stat/text/badge/list/row/group/link`) and
+`schema` is auto-generated from the named fields. It **reuses the worker block** (a
+widget is a worker that refreshes itself). The approach is **valid by
+construction**: the skeleton is valid DSL and the plugin writes the same field
+names into both `schema` and `layout`, so binding can't drift; the authoritative
+gate stays `cr-skills validate` (repo side, in `place_draft`). The repo side needs
+no change — `place_draft` already copytrees `.json` references and the validator
+already checks the layout (P2). The generated body gathers the data and persists
+it, and **if the data source is unavailable it ends as an error** (never a silent
+no-data success) so the dashboard can show an error state. See
+[decisions/0008](../decisions/0008-archetype-driven-widget-authoring.md); the
+widget feature itself (store-defined widgets + the published DSL) lives in
+`nextcrm-agents` (ADRs 0010/0011 there).
 
 **Hybrid handoff (Variant 1).** The plugin does **not** spawn anything and does
 **not** run git/`gh` — on Cowork-on-Windows its shell is a Linux sandbox that
@@ -132,9 +153,11 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
 
 - **Hidden vocabulary.** The plugin never says branch / commit / push / PR /
   merge / git / gh / Claude Code / MCP to the user — nor, for workers,
-  worker / executable / cron / interval / enroll. It speaks of "a separate copy",
-  "sending for review", "runs on its own", "how often while you're at your desk /
-  away". Table in `user-dialog-phrases.md` (EN + RU).
+  worker / executable / cron / interval / enroll — nor, for widgets,
+  widget.json / schema / layout / DSL / save_widget_data. It speaks of "a separate
+  copy", "sending for review", "runs on its own", "how often while you're at your
+  desk / away", and (for widgets) "a dashboard card", "counters", "a list", "card
+  fields". Table in `user-dialog-phrases.md` (EN + RU).
 - **Authored skill content is English-only**, regardless of dialog language — an
   invariant inherited from `project-a-skills/CONTRIBUTING.md`.
 - **Worker scope boundary.** The plugin only authors the *definition* that makes a
@@ -142,10 +165,16 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
   Turning a worker on for a user (enrolment, the dispatcher) is the agent's job,
   downstream of merge — see `nextcrm-agents` ADR 0003 (worker = executable skill)
   and ADR 0009 (agent owns the contracts).
+- **Widget authoring is archetype-driven**, not free-form: the author picks one of
+  three fixed archetypes and the plugin fills a valid-by-construction skeleton — no
+  LLM-built DSL ([0008](../decisions/0008-archetype-driven-widget-authoring.md)).
 - Decisions:
   [0001](../decisions/0001-headless-claude-code-for-git.md) (headless subprocess
   owns git), [0002](../decisions/0002-pure-markdown-no-mcp-server.md) (no MCP in
   v1), [0003](../decisions/0003-two-layer-validation.md) (two-layer validation),
-  [0004](../decisions/0004-single-skill-not-split.md) (one skill, not split).
-- Design spec: `design_docs/2026-05-27-chatrevenue-skill-author-design.md`
-  (worker support in §1.1).
+  [0004](../decisions/0004-single-skill-not-split.md) (one skill, not split),
+  [0008](../decisions/0008-archetype-driven-widget-authoring.md) (archetype-driven
+  widget authoring).
+- Design specs: `design_docs/2026-05-27-chatrevenue-skill-author-design.md`
+  (worker support in §1.1); `design_docs/2026-06-11-skill-author-widget-creation-design.md`
+  (dashboard widget authoring).
