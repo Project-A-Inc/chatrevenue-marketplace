@@ -17,7 +17,8 @@ check fails.
 - [ ] `SKILL.md` is at the root of the skill folder (no nesting)
 - [ ] No `scripts/` or `assets/` directories — these are v2-only and
       rejected by the validator
-- [ ] Every file under `references/` ends in `.md`
+- [ ] Every file under `references/` ends in `.md`, **except** a dashboard
+      widget's `references/widget.json` (see Widget rules below)
 
 ## Name and folder
 
@@ -69,6 +70,23 @@ and the extractor in `project-a-skills/src/cr_skills_cli/fs.py`.
       interval fields only.
 - [ ] Omitting both intervals is valid — the agent applies its defaults.
       Do not require the user to set them.
+
+## Widget (dashboard widget skills only)
+
+Relevant only when the skill is a dashboard widget. See
+`references/widget-archetypes.md`. The **authoritative** layout/binding check is
+`cr-skills validate` server-side (it validates `widget.json` against the
+published widget-layout schema + binding coverage); this is the early pre-filter.
+
+- [ ] If the frontmatter has `widget: true`, a `references/widget.json` is present
+      (and vice-versa — don't ship one without the other).
+- [ ] `widget.json` has `id` (= the skill `name`), a `schema` object, and a
+      `layout` object with `compact` and `expanded`.
+- [ ] The layout came from an archetype skeleton (not hand-built), and every
+      field referenced in the layout (`{{field}}` / `{ "bind": … }`) exists in
+      the `schema` — the archetype keeps these in sync by construction.
+- [ ] A widget is a worker: `executable: true` is set (it runs on its own to
+      refresh). Cadence intervals are optional as usual.
 
 ## Language
 
