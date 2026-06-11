@@ -72,6 +72,16 @@ Before writing `draft.json`:
 <stash-dir>/drafts/<timestamp>-<name>/
 ├── SKILL.md           ← present for create/update; absent for remove
 ├── references/        ← optional, only for create/update
-│   └── *.md
+│   ├── *.md
+│   └── widget.json    ← present only for a dashboard widget (skill has `widget: true`)
 └── draft.json         ← always present
 ```
+
+**Dashboard widgets.** A widget skill is a normal `create` with `widget: true`
+in the `SKILL.md` frontmatter and a `references/widget.json` file (the
+`{ id, schema, layout }` produced from a widget archetype — see
+`references/widget-archetypes.md`). It reuses the existing `worker` block (a
+widget is a worker). The repo side already accepts `.json` references
+(`place_draft` copies them; `cr-skills validate` validates the layout against the
+published widget-layout schema) — no extra manifest fields are required; an
+optional `"widget": true` hint may be added to `draft.json` for the PR body.

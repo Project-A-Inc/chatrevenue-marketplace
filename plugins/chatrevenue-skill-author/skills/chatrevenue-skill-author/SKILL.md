@@ -107,6 +107,25 @@ Also determine whether the skill **runs on its own** (a worker):
   the user asks "will it start running now?", tell them it starts after
   they publish it and turn it on in ChatRevenue.
 
+**Widget branch (a dashboard widget).** If the author wants a dashboard
+surface — cues like "dashboard", "widget", "card", "counter", "tile", "show
+me X on my dashboard", or semantically equivalent phrasings — the skill is a
+**widget**: a worker (above) **plus** a dashboard view. Follow
+`references/widget-archetypes.md`:
+
+- Offer the three archetypes **by description** and let the author pick one.
+- Ask only that archetype's field prompts (counter labels / item or card
+  fields / "Open" link? / newest-vs-most-important).
+- Fill the chosen skeleton into `references/widget.json` (the archetype file
+  shows exactly how — use the same field names in the data shape and the
+  layout), and set `widget: true` in the draft frontmatter.
+- The body is the worker body and must persist the gathered data — and, **if
+  the data source is unavailable / not connected, end as an error** (never
+  fabricate, never finish quietly with no data). The archetype file states this.
+
+Never surface "widget.json", "schema", "layout", or "save_widget_data" — say
+"dashboard card", "counters", "list", "card fields".
+
 Translate the answers into a draft SKILL.md. The body is imperative
 instructions for the ChatRevenue agent; the description is 10-2000
 characters and includes the example trigger phrases verbatim.
@@ -141,6 +160,7 @@ Write the draft to the user's state directory:
 Files in the stash:
 - `SKILL.md` (for create/update)
 - `references/*.md` (if the skill has references)
+- `references/widget.json` (if it's a dashboard widget — see the widget branch in Step 3)
 - `draft.json` per the schema in `references/handoff-manifest.md`
 
 For `type: remove`, only `draft.json` is needed.
@@ -225,4 +245,5 @@ When the user only wants to browse:
 - `references/escalation-template.md` — the verbatim tech-problem template
 - `references/handoff-prompt.md` — the prompt passed to spawned Claude Code
 - `references/handoff-manifest.md` — JSON Schema for `draft.json`
+- `references/widget-archetypes.md` — the widget archetype library (Step 3 widget branch)
 - `references/user-dialog-phrases.md` — UX vocabulary
