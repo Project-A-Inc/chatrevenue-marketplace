@@ -75,6 +75,20 @@ no-data success) so the dashboard can show an error state. See
 widget feature itself (store-defined widgets + the published DSL) lives in
 `nextcrm-agents` (ADRs 0010/0011 there).
 
+**Widget setup.** A widget can need a one-time user setup before it shows data
+(e.g. quota targets). The dialog asks, in plain language, "does this card need a
+one-time setup from the user before it can show data, and what does it collect?"
+On yes the draft sets `requires_setup: true` and the generated body gets a **setup
+branch**: on the setup command it runs an `ask_user` intake, persists the
+settings, then calls `mark_widget_setup_complete(<widget_id>)`; plus mode-aware
+behavior (unattended refresh vs interactive answer). The launch literal
+`setup_command` is **implicit** — defaulted to `/{skill_name} setup`, never asked,
+overridable only on explicit author request. None of `requires_setup`/`setup_command`/
+`command`/`mode` is surfaced to the author — only the word "setup". This mirrors the
+agent's widget-setup contract (`nextcrm-agents` ADRs 0014/0015) into the author
+dialog; no new local ADR (it's a mirror, not a contested choice). Spec:
+`design_docs/2026-06-15-widget-setup-author-dialog.md`.
+
 **Hybrid handoff (Variant 1).** The plugin does **not** spawn anything and does
 **not** run git/`gh` — on Cowork-on-Windows its shell is a Linux sandbox that
 can't git the Windows mount or reach native Claude Code. Instead it fills the
@@ -154,7 +168,8 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
 - **Hidden vocabulary.** The plugin never says branch / commit / push / PR /
   merge / git / gh / Claude Code / MCP to the user — nor, for workers,
   worker / executable / cron / interval / enroll — nor, for widgets,
-  widget.json / schema / layout / DSL / save_widget_data. It speaks of "a separate
+  widget.json / schema / layout / DSL / save_widget_data — nor, for setup,
+  requires_setup / setup_command / command / mode (just "setup"). It speaks of "a separate
   copy", "sending for review", "runs on its own", "how often while you're at your
   desk / away", and (for widgets) "a dashboard card", "counters", "a list", "card
   fields". Table in `user-dialog-phrases.md` (EN + RU).

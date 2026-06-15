@@ -1,5 +1,10 @@
 # Widget Setup — Author-Plugin Dialog Implementation Plan
 
+> **Status: `documented`** (2026-06-15) — shipped in PR #10 (`2ec49a3`); net delta
+> folded into `design_docs/architecture/references/skill-author-plugin.md`
+> ("Widget setup" subsection + the hidden-vocabulary line). All tasks below are
+> complete. Kept for history.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Teach the `chatrevenue-skill-author` plugin to ask, during widget authoring, whether the card needs a one-time user setup — and on "yes" produce a widget skill with `requires_setup: true`, a `command == "setup"` intake branch ending in `mark_widget_setup_complete`, and `mode`-aware refresh/answer behavior — all in plain language, never surfacing the field names.

@@ -1,6 +1,7 @@
 # Widget setup — author-plugin dialog (chatrevenue-marketplace) — Claude Code brief
 
-> Status: `draft` · Owner: Sasha · Created: 2026-06-15 · Single-repo (this repo only).
+> Status: `documented` (2026-06-15; shipped PR #10, `2ec49a3`) · Owner: Sasha · Single-repo.
+> Folded into `design_docs/architecture/references/skill-author-plugin.md` ("Widget setup").
 > **Master spec (read first, source of truth):**
 > `nextcrm-agents/design_docs/2026-06-15-widget-setup-and-invocation-context-design.md` (§3 terminology, §6 this repo's slice).
 > Mini-spec / per-repo handoff derived from it.
