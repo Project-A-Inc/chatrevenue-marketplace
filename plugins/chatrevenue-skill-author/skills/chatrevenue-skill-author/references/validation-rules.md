@@ -87,6 +87,16 @@ published widget-layout schema + binding coverage); this is the early pre-filter
       the `schema` — the archetype keeps these in sync by construction.
 - [ ] A widget is a worker: `executable: true` is set (it runs on its own to
       refresh). Cadence intervals are optional as usual.
+- [ ] `requires_setup` only appears together with `widget: true`. It is meaningless
+      on a non-widget skill — flag a `requires_setup` without `widget: true`.
+- [ ] If the frontmatter has `requires_setup: true`, the body must contain a **setup
+      branch** — an intake (asks the user, e.g. via `ask_user`) that persists the
+      settings and then calls `mark_widget_setup_complete(<widget_id>)`. A
+      `requires_setup: true` whose body has no setup intake and no
+      `mark_widget_setup_complete` call is incomplete — loop back to the dialog.
+- [ ] `requires_setup`, when present, is a boolean. `setup_command`, when present,
+      is a string; it is optional (defaults to `/{skill_name} setup`) — do not
+      require it.
 
 ## Language
 
