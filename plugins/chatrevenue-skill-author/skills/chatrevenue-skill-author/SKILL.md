@@ -122,9 +122,25 @@ me X on my dashboard", or semantically equivalent phrasings — the skill is a
 - The body is the worker body and must persist the gathered data — and, **if
   the data source is unavailable / not connected, end as an error** (never
   fabricate, never finish quietly with no data). The archetype file states this.
+- **Ask whether the card needs a one-time setup.** In plain language: *"Does this
+  card need a one-time setup from the user before it can show data — e.g.
+  collecting their targets or preferences?"* If yes: *"What does setup collect,
+  and what should it ask the user?"* If no, skip the rest of this bullet.
+  - On **yes**, follow the **Setup-capable variant** in
+    `references/widget-archetypes.md`: set `requires_setup: true` in the draft
+    frontmatter, and shape the body so it (a) runs the intake on the setup command
+    — ask for the settings the author named, persist them, then call
+    `mark_widget_setup_complete(<skill-name>)`; (b) refreshes unattended from the
+    saved settings without asking; (c) answers interactively from the saved
+    settings otherwise.
+  - The launch command is **implicit** — it defaults to `/{skill_name} setup`.
+    **Never ask the author about it** and never surface the field name. Only set a
+    custom one if the author explicitly requests it (e.g. "make the setup command
+    X").
 
-Never surface "widget.json", "schema", "layout", or "save_widget_data" — say
-"dashboard card", "counters", "list", "card fields".
+Never surface "widget.json", "schema", "layout", "save_widget_data",
+"requires_setup", "setup_command", "command", or "mode" — say "dashboard card",
+"counters", "list", "card fields", and "setup".
 
 Translate the answers into a draft SKILL.md. The body is imperative
 instructions for the ChatRevenue agent; the description is 10-2000

@@ -13,6 +13,7 @@ subprocess reads it as the source of truth for what to ship.
   "scope": "global",
   "org_id": null,
   "name": "kebab-case-slug",
+  "requires_setup": true,
   "worker": {
     "executable": true,
     "interval_online_min": 30,
@@ -38,6 +39,7 @@ subprocess reads it as the source of truth for what to ship.
 | `scope` | string | "global" or "org" |
 | `org_id` | string \| null | Required when `scope` = "org"; null otherwise |
 | `name` | string | Skill slug; matches `^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]?$` |
+| `requires_setup` | boolean \| absent | **Optional.** Hint for the PR body that this widget needs a one-time user setup (`requires_setup: true` in the skill frontmatter). Additive; the helpers do not require it. |
 | `worker` | object \| absent | **Optional.** Present only when the skill runs on its own. Absent ⇒ a plain (non-executable) skill. |
 | `worker.executable` | boolean | Always `true` when `worker` is present |
 | `worker.interval_online_min` | integer \| absent | Optional positive int (minutes); omit ⇒ agent default |
@@ -83,5 +85,6 @@ in the `SKILL.md` frontmatter and a `references/widget.json` file (the
 `references/widget-archetypes.md`). It reuses the existing `worker` block (a
 widget is a worker). The repo side already accepts `.json` references
 (`place_draft` copies them; `cr-skills validate` validates the layout against the
-published widget-layout schema) — no extra manifest fields are required; an
-optional `"widget": true` hint may be added to `draft.json` for the PR body.
+published widget-layout schema) — no extra manifest fields are required; optional
+`"widget": true` and, for a setup-capable widget, `"requires_setup": true` hints
+may be added to `draft.json` for the PR body.
