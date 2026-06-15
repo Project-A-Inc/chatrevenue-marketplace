@@ -221,6 +221,64 @@ fixed value, not data-driven — leave it `neutral` in v1.
 
 ---
 
+## Setup-capable variant (optional — only if the card needs a one-time user setup)
+
+Any of the three archetypes can additionally require a **one-time setup** from the
+user before it can show data — e.g. it must collect the user's targets, thresholds,
+or preferences first. Add this only when the author confirms the card needs it
+(the main skill asks them in plain language). It does not change the layout or the
+data shape — it adds a branch to the **body** and one frontmatter flag.
+
+When the author says the card needs setup:
+
+1. **Frontmatter** — add `requires_setup: true` (sibling to `widget: true` /
+   `executable: true`). Optionally `setup_command:` — **leave it out**; it defaults
+   to `/{skill_name} setup`. Only add it if the author explicitly asks for a custom
+   command. Never mention the field name to the author.
+2. **Body** — the worker body branches on **how it was invoked**:
+   - **On the setup command** → run the intake: ask the user for each setting
+     (use the agent's `ask_user`), persist the settings, then call
+     `mark_widget_setup_complete(<widget_id>)`. `<widget_id>` is the skill name.
+     This branch is idempotent — running it again is "reconfigure" (read current
+     settings, let the user change them, re-save); it does not reset completion.
+   - **Unattended refresh** (worker) → read the saved settings and refresh the
+     card's data **without ever asking the user**. (The card is only auto-refreshed
+     after setup is complete, so settings will be present; still fail-as-error if
+     the saved settings have vanished — never fabricate.)
+   - **Interactive answer** (chat, no setup command) → answer from the saved
+     settings, interactively.
+
+Skeleton for the body (substitute the real intake questions and data-gathering):
+
+```text
+First, figure out how this run was invoked.
+
+- If this is the setup command:
+  Run the one-time setup. Ask the user for <the settings the author named>
+  one at a time (read any existing settings first and only ask for what's
+  missing or what they want to change). Save each setting. When all settings
+  are captured, call mark_widget_setup_complete(<skill-name>). Then stop —
+  the next refresh will populate the card.
+
+- If this is an unattended (background) refresh:
+  Read the saved settings. Gather the card's data from them (state absolute
+  time windows; never fabricate). Build the data matching the card's shape and
+  persist it — including the empty state. If the saved settings are gone or the
+  data source is unavailable, end the run as an error (so the card shows a
+  setup / connect state). Never ask the user here.
+
+- Otherwise (an interactive question, no setup command):
+  Answer from the saved settings, interactively.
+```
+
+Keep the plain-language rule: when talking to the author, say **"setup"** — never
+`requires_setup`, `setup_command`, `command`, or `mode`. The same
+"persist always, error if the source is unavailable, never fabricate" rule from the
+archetypes still applies to the refresh branch.
+
+This is the same shape the quota widget uses (one `quota-attainment` skill that
+branches on how it was invoked).
+
 ## After filling an archetype
 
 - The body of the `SKILL.md` is a normal worker body: gather the described data
@@ -231,3 +289,5 @@ fixed value, not data-driven — leave it `neutral` in v1.
   error** (so the dashboard can show an error / "connect your source" state) — do
   not finish quietly with no data, and never fabricate.
 - Cadence is the worker's; enabling auto-refresh happens later in ChatRevenue.
+- If the card needs a one-time user setup, also apply the **Setup-capable variant**
+  section above: add `requires_setup: true` and the setup/refresh/answer branches.
