@@ -98,6 +98,14 @@ published widget-layout schema + binding coverage); this is the early pre-filter
       is a string; it is optional (defaults to `/{skill_name} setup`) — do not
       require it.
 
+## Choice questions (`ask_user`)
+
+- [ ] No `ask_user` question authors an "Other"/catch-all option. The UI always
+      auto-injects a free-text "Other", and the agent strips a redundant authored
+      one — so list only the real, distinct options (2-4). If a question needs
+      free-form or numeric input, it is not an options question; do not fake it
+      with an "Other" row.
+
 ## Language
 
 - [ ] Frontmatter `name` is ASCII
