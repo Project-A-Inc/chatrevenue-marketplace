@@ -29,6 +29,38 @@ Speak in plain language. Say "the conversation" / "the chat", not "trace" or
 id) — that's fine to accept. Do not print the API key or the contents of the
 `.env` file.
 
+## Talking to the author — hide the plumbing
+
+The author is non-technical (PM, sales, support). They care whether you can pull
+up the conversation and what it tells them — not *how* the tooling works. Two
+rules govern every problem you hit:
+
+1. **Try safe workarounds silently first.** If something is off but you can
+   recover it yourself — and the fix is read-only, reversible, touches nothing
+   the author owns, and changes no data or state — just do it and move on. Don't
+   narrate it. Examples: the env file is named `env.txt` (or anything) instead of
+   `.env` → point the tool at the file that's actually there; a first-run
+   dependency sync is needed → run it / retry once; the tool needs its working
+   directory set → set it.
+
+2. **Surface only real blockers, in plain language.** Raise a problem only when
+   it actually stops you from answering *and* no safe workaround exists. When you
+   do, say what it means for the author and what to do next — never the technical
+   autopsy. No tool names, version numbers, proxy/HTTP status codes, exit codes,
+   stack traces, or file-format/parsing details.
+
+   - ❌ "`langgraph-tool` needs Python ≥3.13 but the sandbox has 3.10; `uv` can't
+     fetch the runtime (proxy 403); the env file is `env.txt` and its multiline
+     PEM key breaks `--env-file` parsing."
+   - ✅ "I can't pull up that conversation from here — this lookup is meant to run
+     on your own machine. Open it in your skills project and I'll take it from
+     there." (or whatever plain next step actually applies)
+
+**Silent ≠ pretending it worked.** Never hide a failure by inventing or guessing
+an answer, and never silently do anything that touches the author's data or
+changes state — those stay off-limits regardless (see Hard rules). If you truly
+can't answer, say so plainly; don't paper over it.
+
 ## Default language
 
 Default to English; if the author's first message is in another language,
@@ -58,15 +90,17 @@ recoverable, walk them through it, don't treat it as a hard failure);
 `repo_root` is known (reuse the `chatrevenue-skill-author` config — do not
 re-ask).
 
-Run silently; surface only blockers.
+Run silently; surface only real blockers, in plain language (see "Talking to
+the author"). Recover the recoverable ones yourself without narrating them.
 
 ### Step 3 — Fetch the conversation
 
 Use only the read-only commands in `references/trace-tool-commands.md`, run
 with the working directory set to `<repo_root>/tools/langgraph_cli/` (so `uv`
-resolves the tool's own env) and `--env-file "<repo_root>/.env"` on every call
-(so the root `.env` creds reach the tool), writing the dump into
-`<repo_root>/trace_dumps/`:
+resolves the tool's own env) and `--env-file` pointed at the env file pre-flight
+located (normally `<repo_root>/.env`, but use whatever file is actually there —
+see pre-flight) on every call (so the creds reach the tool), writing the dump
+into `<repo_root>/trace_dumps/`:
 
 - thread id → `uv run --env-file "<repo_root>/.env" langgraph-tool trace get-by-thread <id> --verbose -o <repo_root>/trace_dumps/<id>.json`
 - trace id → `uv run --env-file "<repo_root>/.env" langgraph-tool trace get <id> --full -o <repo_root>/trace_dumps/<id>.json`

@@ -25,6 +25,25 @@ ChatRevenue agent. The user does not know git, branches, or pull
 requests. Hide all technical details. Use the vocabulary in
 `references/user-dialog-phrases.md` — never the forbidden terms.
 
+## Hide the plumbing (plugin-wide principle)
+
+Same rule the rest of this plugin follows. When you hit a problem:
+
+1. **Try safe workarounds silently first.** If you can recover it yourself and
+   the fix is reversible, touches nothing the user owns, and changes no data or
+   state, just do it — don't narrate it.
+2. **Surface only real blockers, in plain language.** Raise a problem only when
+   it genuinely stops you *and* no safe workaround exists. Say what it means for
+   the user and what to do next — never the technical autopsy (no tool names,
+   versions, exit codes, stack traces, git/`gh` errors). For environment/git
+   blocks, relay the plain-language `references/escalation-template.md`; never
+   paste the raw error into the dialog yourself.
+
+**Silent ≠ pretending it worked**, and the silent path never covers anything
+that changes state. The real mutations here (git, the review link) happen only
+in the user's own Claude Code (Step 6) — you never run them, so "work around
+silently" on the Cowork side means recovering local, read-only hiccups only.
+
 ## Default language
 
 Default to English. If the user's first message in this session is in
