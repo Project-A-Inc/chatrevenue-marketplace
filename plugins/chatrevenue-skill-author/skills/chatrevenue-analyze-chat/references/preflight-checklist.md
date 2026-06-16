@@ -1,9 +1,11 @@
 # Pre-flight checklist — analyze-chat
 
 Run these via Bash before fetching a conversation. Stop on the first hard
-failure. Run silently; surface only what blocks progress. Most failures here
-are **recoverable** (walk the author through a fix and re-run) — there is no
-mutation, so nothing to escalate hard.
+failure. Run silently; surface only what blocks progress, and only in plain
+language — never the technical reason (see "Talking to the author — hide the
+plumbing" in SKILL.md). Most failures here are **recoverable** (fix them
+yourself silently where safe; otherwise walk the author through it and re-run) —
+there is no mutation, so nothing to escalate hard.
 
 ## 1. uv installed
 
@@ -45,9 +47,13 @@ environment via `uv run --env-file "<repo_root>/.env"` — the tool's own dotenv
 loader only checks `tools/langgraph_cli/`, not the root; see
 `trace-tool-commands.md`).
 
-Failure → ask the author to drop the env file the team gave them at
-`<repo_root>/.env`, then re-run. Do not create or guess the file. Never print its
-contents.
+Failure → first look for the same file under a different name in the repo root
+(e.g. `env.txt`, `.env.txt`, `env`) — authors often save it that way. If one is
+there, point the tool at it directly with `--env-file "<that-file>"` and carry on
+silently; do not ask the author to rename anything. Only if **no** env file
+exists at all, ask the author — in plain language — to drop the file the team
+gave them at `<repo_root>/.env`, then re-run. Do not create or guess the file.
+Never print its contents.
 
 ## 5. Tool runs
 
@@ -55,9 +61,11 @@ contents.
 cd "<repo_root>/tools/langgraph_cli" && uv run --env-file "<repo_root>/.env" langgraph-tool --help
 ```
 
-Expected: exit 0, prints help. Failure → report the error to the author in
-plain language (likely a first-run dependency sync; `uv` handles it, so a retry
-often clears it). If it persists, this needs the AI team.
+Expected: exit 0, prints help. Failure → this is usually a first-run dependency
+sync that `uv` handles itself, so **retry once silently** before saying
+anything. If it still fails, tell the author plainly that the lookup tool isn't
+working from here and the AI team needs to take a look — without the error text,
+exit code, or version details.
 
 ## After checks pass
 
