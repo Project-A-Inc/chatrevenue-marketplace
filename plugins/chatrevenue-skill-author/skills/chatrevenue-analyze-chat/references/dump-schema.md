@@ -1,6 +1,6 @@
 # Dump schema — LangSmith `Run` JSON
 
-A `--format json` dump is one or more LangSmith **`Run`** objects (a tree of
+A dump is one or more LangSmith **`Run`** objects (a tree of
 runs for the conversation). Use this shape to navigate the dump when answering
 the author. (Authoritative source: LangSmith's `Run` schema; this is the
 working subset.)

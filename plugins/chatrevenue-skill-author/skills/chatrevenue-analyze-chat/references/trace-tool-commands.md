@@ -1,63 +1,66 @@
 # Trace tool commands — read-only allowlist
 
-The bundled tool is `langgraph-tool` (the vendored `langgraph_cli`), run via
-`uv run` from `<repo_root>/tools/langgraph_cli/`. **Only the commands below are
-allowed.** They all read; none mutate.
+The trace tool lives in the ChatRevenue skills project at
+`<repo_root>/tools/trace_tools/` (two plain-Python scripts: `trace_fetch.py` and
+`trace_digest.py`). It runs with stock `python3` — no extra packages and no
+working-directory requirement. The **detailed source of truth** for invocation,
+flags, and the dump/digest formats is that tool's own README:
+`<repo_root>/tools/trace_tools/README.md`.
+
+**Only the commands below are allowed.** They all read; none mutate. (The tool
+has no assistant/thread mutation commands at all, so it is read-only by
+construction — this allowlist names the boundary explicitly per ADR 0006.)
 
 Always:
-- `cd "<repo_root>/tools/langgraph_cli"` first — so `uv run` resolves the tool's
-  own environment (Python 3.13 + deps), not the repo's.
-- Pass `--env-file "<repo_root>/.env"` to **every** invocation. The `.env` (the
-  team-provided LangSmith creds) lives at the **repo root**, and the tool's own
-  dotenv loader only looks in `tools/langgraph_cli/`, not the root — so `uv` must
-  inject the root `.env` into the environment. Never pass the key on the command
-  line; only via `--env-file`. See the skill's design doc §6.
-- Write dumps into `<repo_root>/trace_dumps/` with `-o`.
-- Prefer `--format json` for analysis (the file is then LangSmith `Run` JSON —
-  see `dump-schema.md`); `table` is for a quick human glance only.
+- Invoke the script by absolute path with stock `python3`.
+- Pass `--env-file "<repo_root>/.env"` to **every** fetch. The `.env` (the
+  team-provided LangSmith creds) lives at the **repo root**. Never pass the key on
+  the command line; only via `--env-file`.
+- Write dumps and digests into `<repo_root>/trace_dumps/` with `-o`.
 
-## Allowed
+## Allowed — fetch (read-only)
 
 ### Fetch all runs for a thread (the usual entry point)
 
 ```
-uv run --env-file "<repo_root>/.env" langgraph-tool trace get-by-thread <thread_id> --verbose -o <repo_root>/trace_dumps/<thread_id>.json
+python3 "<repo_root>/tools/trace_tools/trace_fetch.py" get-by-thread <thread_id> --env-file "<repo_root>/.env" -o "<repo_root>/trace_dumps/<thread_id>.json"
 ```
 
-Add `--full` for the raw, complete run tree when you need every child run; add
-`--limit <n>` to cap the number of traces.
+Add `--limit <n>` to cap the number of traces; `--start-time <ISO>` to widen or
+move the default bounded time window; `--project <name>` to override the default
+project.
 
 ### Fetch one trace by id
 
 ```
-uv run --env-file "<repo_root>/.env" langgraph-tool trace get <trace_id> --full -o <repo_root>/trace_dumps/<trace_id>.json
+python3 "<repo_root>/tools/trace_tools/trace_fetch.py" get <trace_id> --env-file "<repo_root>/.env" -o "<repo_root>/trace_dumps/<trace_id>.json"
 ```
-
-(`--full` fetches the full trace tree with all child runs; drop it for a lighter
-top-level view.)
 
 ### List recent conversations (when the author has no id)
 
 ```
-uv run --env-file "<repo_root>/.env" langgraph-tool trace list --limit <n> [--project <project>] [-o <file>]
+python3 "<repo_root>/tools/trace_tools/trace_fetch.py" list --limit <n> [--project <project>] --env-file "<repo_root>/.env" -o "<repo_root>/trace_dumps/recent.json"
 ```
 
 Summarize the list for the author, let them pick, then fetch by the chosen id.
 
-### Thread history (optional; needs deployment access)
+## Allowed — digest (local, read-only)
 
 ```
-uv run --env-file "<repo_root>/.env" langgraph-tool thread get-history <thread_id> -o <repo_root>/trace_dumps/<thread_id>-history.json
+python3 "<repo_root>/tools/trace_tools/trace_digest.py" "<repo_root>/trace_dumps/<id>.json" -o "<repo_root>/trace_dumps/<id>.digest.md"
 ```
 
-Only if trace commands aren't enough. This one needs deployment creds
-(`LANGGRAPH_API_URL` / bearer) in the `.env`; if they're absent it will fail —
-fall back to the trace commands above.
+Pure local JSON→Markdown — no network, no LLM. See `digest-format.md` for the
+sections and the `#N`/`id` reference convention. The digest is the **primary**
+analysis artifact; open the raw dump only to drill into a specific run by
+reference.
 
 ## Forbidden (never run)
 
-- `assistant update`, `assistant update-config`, `assistant create`,
-  `assistant clone` — mutating / management.
-- `thread update-state` — mutating.
-- Anything not in the Allowed list. If a question seems to need a mutating
-  command, it's out of scope for this skill — say so; don't run it.
+- Anything that writes or changes state. The tool ships only the read commands
+  above; it has no assistant-management or thread-mutation commands. If a question
+  seems to need a mutating action, it is out of scope for this skill — say so;
+  don't attempt it.
+- Do not invent flags. Only the flags documented in
+  `<repo_root>/tools/trace_tools/README.md` are valid — don't carry over flags
+  from other tools.

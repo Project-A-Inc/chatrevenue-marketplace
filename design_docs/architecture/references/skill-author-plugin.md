@@ -138,18 +138,22 @@ what skill to author. It closes the loop back to `chatrevenue-skill-author`.
 plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
   SKILL.md
   references/
-    preflight-checklist.md   uv / vendored-tool / .env / repo_root checks
+    preflight-checklist.md   python3 / .env / repo_root checks
     trace-tool-commands.md   read-only command allowlist + invocation forms
+    digest-format.md         digest sections + the #N/id reference convention
     dump-schema.md           LangSmith Run JSON shape, for analysis
     analysis-playbook.md     common author questions → how to answer from a dump
 ```
 
-- **Fetch.** It drives the **vendored `langgraph_cli` trace tool** in
-  `project-a-skills` (`uv run --env-file <repo_root>/.env langgraph-tool trace
-  get-by-thread|get|list …`, cwd = `<repo_root>/tools/langgraph_cli/` so `uv`
-  resolves the tool's env), dumping to a gitignored `trace_dumps/`. The tool is
-  documented as a vendored mirror in `project-a-skills/docs/architecture/`
-  (ADR 0006).
+- **Fetch + digest.** It drives the **stdlib `trace_tools`** in `project-a-skills`
+  (`python3 <repo_root>/tools/trace_tools/trace_fetch.py get-by-thread|get|list …
+  --env-file <repo_root>/.env`), run with stock `python3` — no separate toolchain,
+  no pinned Python, no working-directory requirement — dumping to a gitignored
+  `trace_dumps/`. A second script, `trace_digest.py`, turns the dump into a compact
+  Markdown digest (the primary analysis artifact; the LLM drills into the raw dump
+  by `#N`/`id` reference). The tool and its dump/digest formats are documented in
+  `project-a-skills/tools/trace_tools/README.md` (the source of truth) and that
+  repo's ADR 0008.
 - **Analyze.** Cowork reads the LangSmith `Run` JSON and reasons over it — no MCP,
   no new engine (follows [decisions/0002](../decisions/0002-pure-markdown-no-mcp-server.md)).
 - **Read-only.** A strict command allowlist; never `assistant update*` /
@@ -157,10 +161,10 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
 - **Same plugin, not a new one** — same audience and `project-a-skills`
   dependency ([decisions/0005](../decisions/0005-analyze-chat-second-skill-same-plugin.md)).
 - **Credentials/privacy.** The team-provided `.env` (LangSmith key) lives at the
-  `project-a-skills` **repo root** and is injected via `uv run --env-file` (the
-  tool's own dotenv only reads `tools/langgraph_cli/`, not the root); the root
-  `.env` is gitignored, the key is never echoed, and dumps (possible customer
-  data) stay in gitignored `trace_dumps/`.
+  `project-a-skills` **repo root** and is passed to the stdlib tool on every fetch
+  via `--env-file "<repo_root>/.env"`; the root `.env` is gitignored, the key is
+  never echoed, and dumps and digests (possible customer data) stay in gitignored
+  `trace_dumps/`.
 - Design spec: `design_docs/2026-06-08-chatrevenue-analyze-chat-design.md`.
 
 ## Constraints & decisions
