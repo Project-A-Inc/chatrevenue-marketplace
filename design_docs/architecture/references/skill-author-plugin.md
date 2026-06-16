@@ -173,6 +173,19 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
   copy", "sending for review", "runs on its own", "how often while you're at your
   desk / away", and (for widgets) "a dashboard card", "counters", "a list", "card
   fields". Table in `user-dialog-phrases.md` (EN + RU).
+- **Hide the plumbing on the error path too (plugin-wide).** The same posture
+  governs failures, not just the happy path. Both skills follow one rule: try safe
+  workarounds **silently** first (recover read-only, reversible, non-mutating
+  hiccups yourself without narrating — e.g. an env file saved as `env.txt`, a
+  first-run dependency sync), and **surface only real blockers in plain language**
+  (no tool names, versions, status/exit codes, stack traces, or file-format
+  details). Silent never means pretending a failure worked, and never covers
+  anything that changes state. In `chatrevenue-analyze-chat` this lives in the
+  "Talking to the author — hide the plumbing" section + pre-flight checks 4–5; in
+  `chatrevenue-skill-author` as the "Hide the plumbing (plugin-wide principle)"
+  section, with unresolvable env/git blocks relayed via `escalation-template.md`
+  (plain message to the user + a labelled block to forward to the AI team).
+  ([0009](../decisions/0009-hide-the-plumbing-error-handling.md)).
 - **Authored skill content is English-only**, regardless of dialog language — an
   invariant inherited from `project-a-skills/CONTRIBUTING.md`.
 - **Worker scope boundary.** The plugin only authors the *definition* that makes a
@@ -189,7 +202,9 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
   v1), [0003](../decisions/0003-two-layer-validation.md) (two-layer validation),
   [0004](../decisions/0004-single-skill-not-split.md) (one skill, not split),
   [0008](../decisions/0008-archetype-driven-widget-authoring.md) (archetype-driven
-  widget authoring).
+  widget authoring),
+  [0009](../decisions/0009-hide-the-plumbing-error-handling.md) (hide-the-plumbing
+  error handling, plugin-wide).
 - Design specs: `design_docs/2026-05-27-chatrevenue-skill-author-design.md`
   (worker support in §1.1); `design_docs/2026-06-11-skill-author-widget-creation-design.md`
   (dashboard widget authoring).

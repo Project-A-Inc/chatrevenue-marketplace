@@ -86,7 +86,8 @@ code lives in `project-a-skills`.
 
 Why the non-obvious, **implemented** choices were made lives in the append-only
 ADR log at [decisions/](decisions/). The log is going-forward from this
-bootstrap and now carries the `chatrevenue-skill-author` decisions (0001–0008,
-spanning the authoring flow, the analyze-chat skill, and archetype-driven widget
-authoring); decisions already shipped in the `chatrevenue` plugin are documented
+bootstrap and now carries the `chatrevenue-skill-author` decisions (0001–0009,
+spanning the authoring flow, the analyze-chat skill, archetype-driven widget
+authoring, and the plugin-wide hide-the-plumbing error-handling principle);
+decisions already shipped in the `chatrevenue` plugin are documented
 in the plugin/proxy READMEs and are not backfilled as ADRs.

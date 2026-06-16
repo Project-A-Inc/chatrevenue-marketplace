@@ -25,3 +25,4 @@ never editing the old one away.
 | [0006](0006-analyze-chat-read-only-allowlist.md) | analyze-chat uses a read-only trace-tool command allowlist | accepted |
 | [0007](0007-git-via-user-claude-code-handoff.md) | Git/PR runs via a user-initiated Claude Code handoff, not an auto-spawned subprocess (refines 0001) | accepted |
 | [0008](0008-archetype-driven-widget-authoring.md) | Authors create dashboard widgets from a fixed archetype library (valid-by-construction), not free-form layout | accepted |
+| [0009](0009-hide-the-plumbing-error-handling.md) | Plugin-wide error handling: try safe read-only workarounds silently, surface only real blockers in plain language (no technical autopsy) | accepted |
