@@ -15,12 +15,19 @@ misinterpreted request) mutating a live assistant or thread.
 
 ## Decision
 
-The skill is constrained to a **read-only allowlist**: `trace get`,
-`trace get-by-thread`, `trace list`, and optionally `thread get-history`. All
-mutating and assistant-management commands are explicitly **forbidden** and
-enumerated as such in `references/trace-tool-commands.md`. If a request seems to
-need a mutating command, the skill declines and says it's out of scope rather
-than running it.
+The skill is constrained to a **read-only allowlist**, enumerated in
+`references/trace-tool-commands.md`. If a request seems to need a mutating
+command, the skill declines and says it's out of scope rather than running it.
+
+> **Update (2026-06-16, `analyze-chat-self-contained`):** the skill now drives the
+> stdlib `trace_tools` (`trace_fetch.py` + `trace_digest.py`) from `<repo_root>`
+> instead of the vendored `langgraph_cli`. The allowlist is the new read-only
+> invocations: `trace_fetch.py get-by-thread|get|list` (fetch) and
+> `trace_digest.py` (local JSON→Markdown digest). The optional `thread
+> get-history` entry is dropped. The new tool has **no** mutating or
+> assistant-management commands at all, so the read-only guarantee is now true by
+> construction as well as by allowlist. The detailed source of truth is
+> `project-a-skills/tools/trace_tools/README.md`.
 
 ## Consequences
 

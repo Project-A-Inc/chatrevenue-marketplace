@@ -1,6 +1,6 @@
 # Dump schema — LangSmith `Run` JSON
 
-A `--format json` dump is one or more LangSmith **`Run`** objects (a tree of
+A dump is one or more LangSmith **`Run`** objects (a tree of
 runs for the conversation). Use this shape to navigate the dump when answering
 the author. (Authoritative source: LangSmith's `Run` schema; this is the
 working subset.)
@@ -39,6 +39,7 @@ working subset.)
 
 ## Note
 
-`--full` produces the raw `model_dump` of every run (most complete, largest);
-without it you get a lighter top-level view. Use `--full` when you need to
-inspect exact `inputs`/`outputs` or the full tool list of a turn.
+The fetcher emits a single structured dump shape — every run carries the fields
+above, including `inputs` and `outputs`. There is no lighter/heavier variant to
+choose: open a run's `inputs`/`outputs` and `extra` directly to inspect exactly
+what it received and produced and the tools bound to a turn.

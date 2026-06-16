@@ -8,7 +8,7 @@ description: >
   skill trigger here", "what tools did the agent call", "where did the agent
   go wrong", "pull up thread <id>", "show me recent agent chats", "debug this
   agent run", and semantically equivalent phrasings in the user's language.
-  The skill fetches the conversation's trace dump with the bundled trace tool,
+  The skill fetches the conversation's trace dump with a read-only trace tool,
   then answers the author's questions by reading the dump. It is read-only —
   it never changes traces or assistants. When the analysis points to a skill
   change, it hands off to chatrevenue-skill-author. Dialog follows the user's
@@ -20,7 +20,7 @@ description: >
 
 You help a ChatRevenue skill author inspect a real agent conversation and
 answer their questions about it, so they can decide what skill to create or
-fix. You fetch the conversation's trace using a bundled tool, then reason over
+fix. You fetch the conversation's trace using a read-only tool, then reason over
 the dump. You are **read-only**: never run anything that changes traces,
 threads, or assistants (see `references/trace-tool-commands.md`).
 
@@ -49,9 +49,9 @@ rules govern every problem you hit:
    autopsy. No tool names, version numbers, proxy/HTTP status codes, exit codes,
    stack traces, or file-format/parsing details.
 
-   - ❌ "`langgraph-tool` needs Python ≥3.13 but the sandbox has 3.10; `uv` can't
-     fetch the runtime (proxy 403); the env file is `env.txt` and its multiline
-     PEM key breaks `--env-file` parsing."
+   - ❌ "the trace lookup can't reach LangSmith (HTTP 403 via the proxy); the env
+     file is `env.txt` and its multiline PEM key breaks `--env-file` parsing; the
+     digest step found no recognizable runs in the dump JSON."
    - ✅ "I can't pull up that conversation from here — this lookup is meant to run
      on your own machine. Open it in your skills project and I'll take it from
      there." (or whatever plain next step actually applies)
@@ -82,45 +82,64 @@ entry points:
 
 ### Step 2 — Pre-flight (light)
 
-Run the checks in `references/preflight-checklist.md`. Briefly: `uv` is
-installed; the bundled trace tool exists at `<repo_root>/tools/langgraph_cli/`;
-the team-provided `.env` is present at the **repo root** `<repo_root>/.env` (if
-not, ask the author to drop the env file the team gave them there — this is
-recoverable, walk them through it, don't treat it as a hard failure);
-`repo_root` is known (reuse the `chatrevenue-skill-author` config — do not
-re-ask).
+Run the checks in `references/preflight-checklist.md`. Briefly: `repo_root` is
+known (reuse the `chatrevenue-skill-author` config — do not re-ask); stock
+`python3` is available (the trace tool is plain Python with no extra packages —
+nothing to install or build); and the team-provided `.env` is present at the
+**repo root** `<repo_root>/.env` (if not, ask the author to drop the env file the
+team gave them there — this is recoverable, walk them through it, don't treat it
+as a hard failure).
 
 Run silently; surface only real blockers, in plain language (see "Talking to
 the author"). Recover the recoverable ones yourself without narrating them.
 
 ### Step 3 — Fetch the conversation
 
-Use only the read-only commands in `references/trace-tool-commands.md`, run
-with the working directory set to `<repo_root>/tools/langgraph_cli/` (so `uv`
-resolves the tool's own env) and `--env-file` pointed at the env file pre-flight
+Use only the read-only commands in `references/trace-tool-commands.md`. Run them
+with stock `python3`, passing `--env-file` pointed at the env file pre-flight
 located (normally `<repo_root>/.env`, but use whatever file is actually there —
-see pre-flight) on every call (so the creds reach the tool), writing the dump
-into `<repo_root>/trace_dumps/`:
+see pre-flight) on every call (so the creds reach the tool), and write the dump
+into `<repo_root>/trace_dumps/`. There is no working-directory requirement —
+invoke the script by its absolute path:
 
-- thread id → `uv run --env-file "<repo_root>/.env" langgraph-tool trace get-by-thread <id> --verbose -o <repo_root>/trace_dumps/<id>.json`
-- trace id → `uv run --env-file "<repo_root>/.env" langgraph-tool trace get <id> --full -o <repo_root>/trace_dumps/<id>.json`
-- neither → `uv run --env-file "<repo_root>/.env" langgraph-tool trace list --limit <n> [--project <p>]`, show
+- thread id → `python3 "<repo_root>/tools/trace_tools/trace_fetch.py" get-by-thread <id> --env-file "<repo_root>/.env" -o "<repo_root>/trace_dumps/<id>.json"`
+- trace id → `python3 "<repo_root>/tools/trace_tools/trace_fetch.py" get <id> --env-file "<repo_root>/.env" -o "<repo_root>/trace_dumps/<id>.json"`
+- neither → `python3 "<repo_root>/tools/trace_tools/trace_fetch.py" list --limit <n> [--project <p>] --env-file "<repo_root>/.env" -o "<repo_root>/trace_dumps/recent.json"`, show
   the author a short summary of recent conversations, let them pick, then fetch
   by the chosen id.
 
 Tell the author only something like "Pulling up that conversation…".
 
+### Step 3.5 — Build the digest
+
+Turn the raw dump into a compact Markdown digest — this is the **primary** thing
+you read in Step 4:
+
+```
+python3 "<repo_root>/tools/trace_tools/trace_digest.py" "<repo_root>/trace_dumps/<id>.json" -o "<repo_root>/trace_dumps/<id>.digest.md"
+```
+
+This is a local, read-only transform — no network, no LLM. The digest summarizes
+the conversation into labeled sections, and every line carries a reference back to
+the run it came from (`#N` `<run-id>`) so you can drill into the raw dump for the
+exact details (see `references/digest-format.md`). Don't narrate this step to the
+author.
+
 ### Step 4 — Analyze
 
-Read the dumped file (it is LangSmith `Run` JSON — see
-`references/dump-schema.md`) and answer the author's questions. Use
+Read the **digest** first (`<repo_root>/trace_dumps/<id>.digest.md`) — it is the
+primary artifact and gives you the timeline, the skills in scope, the tools that
+fired, the errors, what the model saw, and token/cost totals (see
+`references/digest-format.md`). When you need the exact `inputs`/`outputs` of a
+specific run, open that run in the raw dump by its `#N`/`id` reference (the dump
+is LangSmith `Run` JSON — see `references/dump-schema.md`). Use
 `references/analysis-playbook.md` for the common author questions and how to
-answer each from the dump: whether a given skill loaded/triggered, what tools
-were called and with what arguments, where the run errored, and what in a
-skill's description or body would change the outcome.
+answer each: whether a given skill loaded/triggered, what tools were called and
+with what arguments, where the run errored, and what in a skill's description or
+body would change the outcome.
 
-Quote only what's needed to answer — do not paste the whole dump or unnecessary
-customer data into chat (see Privacy below).
+Quote only what's needed to answer — do not paste the whole digest or dump or
+unnecessary customer data into chat (see Privacy below).
 
 ### Step 5 — Bridge to authoring
 
@@ -142,9 +161,10 @@ flow; you only diagnose.
 - **Read-only.** Only the commands in `references/trace-tool-commands.md`. Never
   `assistant update*`, `thread update-state`, or any mutating/assistant-management
   command.
-- Always invoke the trace tool with cwd `<repo_root>/tools/langgraph_cli/` (so
-  `uv` resolves the tool's env) and `--env-file "<repo_root>/.env"` (so the root
-  creds load). Never pass credentials on the command line.
+- Always invoke the trace tool as `python3 "<repo_root>/tools/trace_tools/<script>.py"`
+  with `--env-file "<repo_root>/.env"` on every fetch (so the root creds load).
+  Never pass credentials on the command line. There is no working-directory
+  requirement.
 - You diagnose; you do not author skills yourself — hand off to
   `chatrevenue-skill-author` for any skill change.
 
@@ -153,4 +173,5 @@ flow; you only diagnose.
 - `references/preflight-checklist.md` — environment checks before fetching
 - `references/trace-tool-commands.md` — the read-only command allowlist + forms
 - `references/dump-schema.md` — the LangSmith `Run` JSON shape, for analysis
+- `references/digest-format.md` — the digest's sections + the `#N`/`id` reference convention
 - `references/analysis-playbook.md` — common author questions → how to answer
