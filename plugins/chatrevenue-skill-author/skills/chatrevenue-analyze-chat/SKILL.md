@@ -61,6 +61,18 @@ an answer, and never silently do anything that touches the author's data or
 changes state — those stay off-limits regardless (see Hard rules). If you truly
 can't answer, say so plainly; don't paper over it.
 
+## Architecture is the source of truth
+
+When the analysis turns on how the ChatRevenue system actually behaves or what a
+contract is — dispatch, invocation context (`setup` / `worker` / `chat`),
+widget/dashboard surfaces, setup, anything about how the agent runs skills —
+treat `project-a-skills/docs/architecture` as authoritative, not the skill
+bodies or even the trace dump's surface behavior. If that repo is mounted and
+readable, consult it **before** reasoning from a skill body. If it is not
+available — this plugin often runs in Cowork **without** `project-a-skills`
+mounted — do **not** assert system behavior from a skill body alone: flag that
+the conclusion needs confirmation against the architecture docs.
+
 ## Default language
 
 Default to English; if the author's first message is in another language,

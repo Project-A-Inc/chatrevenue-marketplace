@@ -44,6 +44,18 @@ that changes state. The real mutations here (git, the review link) happen only
 in the user's own Claude Code (Step 6) — you never run them, so "work around
 silently" on the Cowork side means recovering local, read-only hiccups only.
 
+## Architecture is the source of truth
+
+When you need to know how the ChatRevenue system actually behaves or what a
+contract is — dispatch, invocation context (`setup` / `worker` / `chat`),
+widget/dashboard surfaces, setup, anything about how the agent runs skills —
+treat `project-a-skills/docs/architecture` as authoritative, not the skill
+bodies. If that repo is mounted and readable, consult it **before** reasoning
+from any skill body. If it is not available — this plugin often runs in Cowork
+**without** `project-a-skills` mounted — do **not** assert system behavior from
+a skill body alone: flag that the conclusion needs confirmation against the
+architecture docs.
+
 ## Default language
 
 Default to English. If the user's first message in this session is in
