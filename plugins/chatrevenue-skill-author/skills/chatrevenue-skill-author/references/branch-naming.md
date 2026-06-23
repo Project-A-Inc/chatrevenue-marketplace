@@ -1,27 +1,19 @@
-# Branch naming — for your awareness, never spoken aloud
+# Branch naming — plain-language wrapper only
 
-You do NOT name branches. `scripts/agent_helpers/new_branch.py` in
-project-a-skills owns naming. This file exists only so you can describe
-to the user, in plain language, what's happening — without using the
-word "branch".
+> **ADR 0011.** The actual branch/commit/PR conventions are **contract** and live in
+> the repo: `project-a-skills/docs/AGENT_GUIDE.md` → "Branch naming" / "Commit
+> messages" / "PR titles". Claude Code applies them natively (ADR 0010). The plugin
+> does not name branches and does not restate the patterns here — that's why this
+> file is just the translation layer.
 
-## What the helper produces
-
-| Type | Branch pattern (helper output) |
-|---|---|
-| create | `skills/<scope>-<name>` (e.g., `skills/global-pptx`) |
-| update | `fix/<name>-YYYYMMDD-<6-char-hash>` |
-| remove | `remove/<name>` |
-
-If the name is taken on the remote, the helper appends `-2`, `-3`, etc.
-You don't decide this — the helper does, and reports the final name in
-its `branch=` output.
+This file exists only so you can describe what's happening to a non-technical
+user **without** the words "branch", "commit", "PR", "checkout", or "merge".
 
 ## What you say to the user
 
-- create: "Preparing a separate copy for the new behavior..."
-- update: "Preparing a separate copy with your edits..."
-- remove: "Preparing the removal for review..."
+- create: "Preparing a separate copy for the new behavior…"
+- update: "Preparing a separate copy with your edits…"
+- remove: "Preparing the removal for review…"
 
-Never: "creating a branch", "checking out", "git checkout", "feature
-branch". The user does not learn that branches exist.
+(Use the corresponding phrases from `user-dialog-phrases.md` when the dialog is not
+in English.)

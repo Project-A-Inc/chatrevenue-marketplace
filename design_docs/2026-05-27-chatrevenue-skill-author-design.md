@@ -4,6 +4,7 @@
 **Date:** 2026-05-27
 **Revised:** 2026-06-08 — worker support folded in (see §1.1 and ADR 0003 in `nextcrm-agents`)
 **Revised:** 2026-06-08 — **Variant 1 hybrid handoff** (see §1.2); supersedes the auto-spawn mechanism in §5.2, §7.1 step 6–7, §7.4, and the env half of §8/§11
+**Revised:** 2026-06-23 — **Variant 2** ([ADR 0010](architecture/decisions/0010-cowork-delivers-content-code-owns-git.md)): the plugin's git helpers (`preflight`/`new_branch`/`open_pr`) are **retired** and Claude Code owns git natively. Everywhere this doc says the handoff runs the four `agent_helpers` (notably §1.2, the §7 ship steps, §6), read it as: Cowork delivers content + intent; Code places the draft via `place_draft.py` (no commit) and branches/commits/PRs itself. The dirty-tree gate is gone.
 **Author flow:** brainstormed via Cowork (`superpowers:brainstorming`)
 **Target plugin path:** `chatrevenue-marketplace/plugins/chatrevenue-skill-author/`
 **Depends on:** `project-a-skills` (Level 2 repo-side artifacts; see §6) + the worker-cadence frontmatter contract (see §1.1)

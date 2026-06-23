@@ -75,12 +75,13 @@ code lives in `project-a-skills`.
 |---|---|---|
 | chatrevenue plugin | [references/chatrevenue-plugin.md](references/chatrevenue-plugin.md) | The plugin layout, the six skills (invocation vs setup), the desktop-app dependency model, and how setup skills register scheduled tasks/artifacts. |
 | Memory proxy | [references/memory-proxy.md](references/memory-proxy.md) | The stdio↔HTTP bridge to the desktop app's MCP server: why it exists, how it's wired via `.mcp.json`, the committed-bundle convention, graceful degradation. |
-| skill-author plugin | [references/skill-author-plugin.md](references/skill-author-plugin.md) | The `chatrevenue-skill-author` plugin and both its skills: the 7-step authoring workflow (`draft.json` v2 with workers, archetype-driven dashboard widgets, headless Claude Code handoff, two-layer validation) and the read-only `chatrevenue-analyze-chat` skill (drives the vendored trace tool to fetch + analyze real agent conversations). |
+| skill-author plugin | [references/skill-author-plugin.md](references/skill-author-plugin.md) | The `chatrevenue-skill-author` plugin and both its skills: the 7-step authoring workflow (`draft.json` v2 with workers, archetype-driven dashboard widgets, content+intent handoff to the user's native Claude Code per [ADR 0010](decisions/0010-cowork-delivers-content-code-owns-git.md), two-layer validation) and the read-only `chatrevenue-analyze-chat` skill (drives the vendored trace tool to fetch + analyze real agent conversations). |
 
 > Cross-repo note: `chatrevenue-skill-author` is a two-repo feature. Its plugin
-> half is documented above; its repo-side half (`AGENT_GUIDE.md` + the
-> `agent_helpers`) is documented in
-> `project-a-skills/docs/architecture/references/agent-automation.md`.
+> half is documented above; its repo-side half (`AGENT_GUIDE.md` + the remaining
+> `place_draft.py` FS primitive — the git helpers were retired by
+> [ADR 0010](decisions/0010-cowork-delivers-content-code-owns-git.md)) is documented
+> in `project-a-skills/docs/architecture/references/agent-automation.md`.
 
 ## Decisions
 

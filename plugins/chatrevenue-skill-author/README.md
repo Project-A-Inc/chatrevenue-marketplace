@@ -14,8 +14,8 @@ run. For reference, the full list:
 1. **Node.js 18+** on PATH (Cowork plugin runtime; usually already
    present alongside the existing `chatrevenue` plugin)
 2. **Claude Code CLI** — the user runs one paste-able step in their own
-   Claude Code to do the git/PR (Variant 1 hybrid handoff; the Cowork
-   sandbox can't do git on Windows — see the design doc) (https://claude.com/code)
+   Claude Code, which owns the git/PR natively (content+intent handoff, ADR 0010;
+   the Cowork sandbox can't do git on Windows — see the design doc) (https://claude.com/code)
 3. **GitHub CLI (`gh`)** — install per OS; the plugin guides through
    `gh auth login`
 4. **uv** (Python package manager) — used by the repo's
@@ -24,8 +24,9 @@ run. For reference, the full list:
    asks where it lives and offers to clone if missing
 6. **GitHub push permission** to `Project-A-Inc/project-a-skills`
 
-`project-a-skills` must also have `docs/AGENT_GUIDE.md` v1 and
-`scripts/agent_helpers/*.py` (shipped by a separate engineering plan).
+`project-a-skills` must also have `docs/AGENT_GUIDE.md` (v2) and
+`scripts/agent_helpers/place_draft.py` (the git helpers were retired by ADR 0010;
+Claude Code does branch/commit/PR natively).
 
 ## What the user sees
 
@@ -45,9 +46,10 @@ Plugin: "Done. Your draft is here: https://github.com/.../pull/123
          button when you're ready."
 ```
 
-The git/PR step runs in the user's own Claude Code (Variant 1 hybrid handoff),
-because the Cowork sandbox can't do git on the Windows mount. Even so, no
-"branch", "commit", "PR", "merge", "MCP" leaks into the conversation. The same applies to worker skills
+The git/PR step runs in the user's own Claude Code, which owns git end-to-end
+(content+intent handoff, ADR 0010), because the Cowork sandbox can't do git on the
+Windows mount. Even so, no "branch", "commit", "PR", "merge", "MCP" leaks into the
+conversation. The same applies to worker skills
 (ones that run on their own): the user is asked whether it should "run
 on its own" and "how often", never about `executable`, intervals, or
 cron.

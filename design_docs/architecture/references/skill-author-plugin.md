@@ -7,9 +7,10 @@ or browse ChatRevenue agent skills — including **workers** (skills that run on
 their own) and **dashboard widgets** (a worker plus a dashboard surface) —
 through a plain-language Cowork dialog that ends with a clickable review link,
 **without ever seeing git, branches, pull requests, or the Claude Code CLI**. It owns the user-facing dialog, the local draft, the Cowork-side
-pre-validation, and the handoff that spawns a headless Claude Code subprocess. It
-does **not** own the git/PR mechanics (delegated to `project-a-skills`'
-`scripts/agent_helpers/` via the headless subprocess — see
+pre-validation, and a content+intent handoff prompt for the user's own Claude
+Code. It does **not** own the git/PR mechanics (the user's native Claude Code owns
+git end-to-end per [ADR 0010](../decisions/0010-cowork-delivers-content-code-owns-git.md);
+the only repo-side primitive it calls is `place_draft.py` — see
 `project-a-skills/docs/architecture/references/agent-automation.md`), the
 authoritative validation rules (owned by the agent — see
 `nextcrm-agents` ADR 0009), or worker **enrolment** (the agent/UI, downstream of
@@ -29,11 +30,11 @@ plugins/chatrevenue-skill-author/
   skills/chatrevenue-skill-author/
     SKILL.md                       orchestration body (7-step workflow)
     references/
-      preflight-checklist.md       10 ordered environment/repo checks
+      preflight-checklist.md       informational env/repo-check spec (Code's domain; not run by the plugin — ADR 0010)
       validation-rules.md          Cowork-side LLM pre-filter (incl. worker frontmatter)
-      branch-naming.md             what the helper produces; what to say instead
+      branch-naming.md             what Code produces; what to say instead
       escalation-template.md       verbatim tech-problem block + category codes
-      handoff-prompt.md            the prompt body passed to `claude --headless`
+      handoff-prompt.md            the content+intent prompt the user pastes into their own Claude Code
       handoff-manifest.md          draft.json schema (v2; worker object + widget.json reference rule)
       widget-archetypes.md         the 3 dashboard-widget archetypes + field prompts (Step 3 widget branch)
       user-dialog-phrases.md       UX vocabulary (never/instead, EN + RU) + worker phrases
@@ -89,22 +90,26 @@ agent's widget-setup contract (`nextcrm-agents` ADRs 0014/0015) into the author
 dialog; no new local ADR (it's a mirror, not a contested choice). Spec:
 `design_docs/2026-06-15-widget-setup-author-dialog.md`.
 
-**Hybrid handoff (Variant 1).** The plugin does **not** spawn anything and does
-**not** run git/`gh` — on Cowork-on-Windows its shell is a Linux sandbox that
-can't git the Windows mount or reach native Claude Code. Instead it fills the
-`handoff-prompt.md` placeholders (the stash `draft.json` path + `repo_root`) and
-hands the user a copy-paste block to run **in their own Claude Code**, which reads
-`project-a-skills/docs/AGENT_GUIDE.md` (requires `agent_guide_version: 1`) and
-runs the four helpers `preflight → new_branch → place_draft → open_pr`, producing
-the `pr_url`. The user pastes the link back. See
-[decisions/0007](../decisions/0007-git-via-user-claude-code-handoff.md).
+**Content + intent handoff (Variant 2, [ADR 0010](../decisions/0010-cowork-delivers-content-code-owns-git.md)).**
+The plugin does **not** spawn anything and does **not** run git/`gh` — on
+Cowork-on-Windows its shell is a Linux sandbox that can't git the Windows mount or
+reach native Claude Code. Instead it fills the `handoff-prompt.md` placeholders
+(the stash `draft.json` path + `repo_root`, forward-slash/quoted) and hands the
+user a copy-paste block to run **in their own Claude Code**, which reads
+`project-a-skills/docs/AGENT_GUIDE.md`, places the draft via the one remaining
+helper `place_draft.py` (pure FS + `cr-skills validate`, no commit), then
+**branches / commits / pushes / opens the PR natively**. The user pastes the link
+back. ADR 0010 **supersedes [0007](../decisions/0007-git-via-user-claude-code-handoff.md)**:
+the `preflight → new_branch → open_pr` helper chain is retired (Code owns git), and
+the clean-working-tree gate is dropped (a dirty tree is normal when Cowork authors
+and Code commits).
 
 **Cross-repo dependency.** The plugin is the authoring half of a two-repo feature:
-it depends on `project-a-skills` shipping `docs/AGENT_GUIDE.md` v1 + the four
-`scripts/agent_helpers/*.py` (the repo-side half, documented in that repo's
-`architecture/references/agent-automation.md`). The real environment checks
-(`gh`/`git`/`uv`/push/clean-tree/guide version) run in `preflight.py` on the
-user's Claude Code side, not in Cowork.
+it depends on `project-a-skills` shipping `docs/AGENT_GUIDE.md` + the
+`place_draft.py` FS primitive (the repo-side half, documented in that repo's
+`architecture/references/agent-automation.md`). Any environment/git checks now run
+in the user's native Claude Code (not in Cowork, and not via a plugin
+`preflight.py`).
 
 ## Lifecycle / flow
 
@@ -116,7 +121,7 @@ SKILL.md ─ settle repo_root ─ collect ─ Cowork validate ─ stash draft.js
   │                                                       │
   └──────────────── hands a paste-able prompt ───────────┘
                                                           ▼
-                              preflight → new_branch → place_draft → open_pr
+                       place_draft (FS + validate) → Code: branch/commit/push/PR
                                                           │  pr_url
   user pastes link back ◀─────────────────────────────────┘
   │
@@ -201,14 +206,21 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
   three fixed archetypes and the plugin fills a valid-by-construction skeleton — no
   LLM-built DSL ([0008](../decisions/0008-archetype-driven-widget-authoring.md)).
 - Decisions:
-  [0001](../decisions/0001-headless-claude-code-for-git.md) (headless subprocess
-  owns git), [0002](../decisions/0002-pure-markdown-no-mcp-server.md) (no MCP in
-  v1), [0003](../decisions/0003-two-layer-validation.md) (two-layer validation),
-  [0004](../decisions/0004-single-skill-not-split.md) (one skill, not split),
+  [0001](../decisions/0001-headless-claude-code-for-git.md) (Claude Code owns git,
+  not the plugin's bash), [0002](../decisions/0002-pure-markdown-no-mcp-server.md)
+  (no MCP in v1), [0003](../decisions/0003-two-layer-validation.md) (two-layer
+  validation), [0004](../decisions/0004-single-skill-not-split.md) (one skill, not
+  split), [0007](../decisions/0007-git-via-user-claude-code-handoff.md) (user-initiated
+  handoff; *superseded by 0010*),
   [0008](../decisions/0008-archetype-driven-widget-authoring.md) (archetype-driven
   widget authoring),
   [0009](../decisions/0009-hide-the-plumbing-error-handling.md) (hide-the-plumbing
-  error handling, plugin-wide).
+  error handling, plugin-wide),
+  [0010](../decisions/0010-cowork-delivers-content-code-owns-git.md) (Cowork delivers
+  content+intent; Code owns git natively; plugin git-helpers retired),
+  [0011](../decisions/0011-plugin-targets-repo-docs-translation-layer.md) (plugin
+  targets `project-a-skills` docs as the single source of truth; plugin is a
+  plain-language translation layer that embeds no contract).
 - Design specs: `design_docs/2026-05-27-chatrevenue-skill-author-design.md`
   (worker support in §1.1); `design_docs/2026-06-11-skill-author-widget-creation-design.md`
   (dashboard widget authoring).
