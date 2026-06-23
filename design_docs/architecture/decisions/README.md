@@ -23,6 +23,8 @@ never editing the old one away.
 | [0004](0004-single-skill-not-split.md) | One skill triggers create/update/remove/explore, not split | accepted |
 | [0005](0005-analyze-chat-second-skill-same-plugin.md) | Chat analysis ships as a second skill in the skill-author plugin, not a new plugin | accepted |
 | [0006](0006-analyze-chat-read-only-allowlist.md) | analyze-chat uses a read-only trace-tool command allowlist | accepted |
-| [0007](0007-git-via-user-claude-code-handoff.md) | Git/PR runs via a user-initiated Claude Code handoff, not an auto-spawned subprocess (refines 0001) | accepted |
+| [0007](0007-git-via-user-claude-code-handoff.md) | Git/PR runs via a user-initiated Claude Code handoff, not an auto-spawned subprocess (refines 0001) | superseded by 0010 |
 | [0008](0008-archetype-driven-widget-authoring.md) | Authors create dashboard widgets from a fixed archetype library (valid-by-construction), not free-form layout | accepted |
 | [0009](0009-hide-the-plumbing-error-handling.md) | Plugin-wide error handling: try safe read-only workarounds silently, surface only real blockers in plain language (no technical autopsy) | accepted |
+| [0010](0010-cowork-delivers-content-code-owns-git.md) | Cowork delivers content + intent; the user's Claude Code owns git end-to-end (the plugin's git helpers are retired) | accepted |
+| [0011](0011-plugin-targets-repo-docs-translation-layer.md) | The skill-author plugin targets `project-a-skills` architecture docs as the single source of truth; the plugin is a plain-language translation layer (generalises 0010) | accepted |

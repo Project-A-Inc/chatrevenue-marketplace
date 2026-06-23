@@ -1,8 +1,12 @@
 # 0007 — Git/PR runs via a user-initiated Claude Code handoff, not an auto-spawned subprocess
 
-- **Status:** accepted — refines [0001](0001-headless-claude-code-for-git.md) (the
+- **Status:** **superseded by [0010](0010-cowork-delivers-content-code-owns-git.md)**
+  (2026-06-23) — refined [0001](0001-headless-claude-code-for-git.md) (the
   "Claude Code does git, not the plugin's own bash" principle stands; the
-  *auto-spawn* mechanism in 0001 is superseded by this)
+  *auto-spawn* mechanism in 0001 was superseded by this). 0010 keeps the
+  Cowork-authors / Code-does-git split but retires the plugin's `agent_helpers` git
+  chain: Code now owns branch/commit/PR **natively** rather than running the
+  plugin's `preflight → new_branch → open_pr` helpers.
 - **Date:** 2026-06-08
 - **Source:** `design_docs/2026-05-27-chatrevenue-skill-author-design.md` §1.2; surfaced during analyze-chat/author smoke testing.
 

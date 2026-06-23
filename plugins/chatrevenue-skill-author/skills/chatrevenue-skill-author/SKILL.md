@@ -44,17 +44,27 @@ that changes state. The real mutations here (git, the review link) happen only
 in the user's own Claude Code (Step 6) — you never run them, so "work around
 silently" on the Cowork side means recovering local, read-only hiccups only.
 
-## Architecture is the source of truth
+## Architecture is the source of truth — this plugin only translates (ADR 0011)
 
-When you need to know how the ChatRevenue system actually behaves or what a
-contract is — dispatch, invocation context (`setup` / `worker` / `chat`),
-widget/dashboard surfaces, setup, anything about how the agent runs skills —
-treat `project-a-skills/docs/architecture` as authoritative, not the skill
-bodies. If that repo is mounted and readable, consult it **before** reasoning
-from any skill body. If it is not available — this plugin often runs in Cowork
-**without** `project-a-skills` mounted — do **not** assert system behavior from
-a skill body alone: flag that the conclusion needs confirmation against the
-architecture docs.
+The technical contract lives in `project-a-skills`, not in this plugin. That
+covers **both**:
+
+- *system behaviour* — dispatch, invocation context (`setup` / `worker` / `chat`),
+  widget/dashboard surfaces, how the agent runs skills (`docs/architecture/`); and
+- *the authoring/ship contract* — the ship flow, the `draft.json` schema, branch /
+  commit / PR conventions, the `place_draft.py` surface, validation rules
+  (`docs/AGENT_GUIDE.md`, `docs/architecture/`, `CONTRIBUTING.md`).
+
+Treat those repo docs as authoritative; **this plugin does not restate the
+contract, it translates it** into plain language for a non-technical author. Your
+`references/*.md` are either translation (dialog vocabulary, archetype prompts,
+plain-language wrappers) or **pointers** to the repo doc that actually owns the
+fact. When the repo is mounted, consult it **before** reasoning from any skill body
+or local note. When it is not — this plugin often runs in Cowork **without**
+`project-a-skills` mounted — keep to the translation you hold locally and do **not**
+assert system behaviour or contract detail from memory: flag that the conclusion
+needs confirmation against the repo docs. (Why the contract is *targeted*, not
+inlined: ADR 0011.)
 
 ## Default language
 
@@ -74,13 +84,15 @@ Proceed conversationally, one step at a time.
 
 ### Step 1 — Light pre-flight (Cowork-side only)
 
-> **Variant 1 (2026-06-08).** You run inside Cowork — on Cowork-on-Windows that
-> is a Linux sandbox that **cannot** run `gh`/`git`, cannot write git on the
-> Windows mount, and cannot reach the user's native Claude Code. So you do **not**
-> verify the environment here. The real environment checks (`gh`, `git`, `uv`,
-> push permission, clean working tree, `agent_guide_version`) run later in
-> `scripts/agent_helpers/preflight.py` on the user's **native Claude Code** side
-> (Step 6). See `references/preflight-checklist.md`.
+> **Variant 2 (2026-06-23, ADR 0010).** You run inside Cowork — on
+> Cowork-on-Windows that is a Linux sandbox that **cannot** run `gh`/`git`, cannot
+> write git on the Windows mount, and cannot reach the user's native Claude Code.
+> So you do **not** verify the environment here. Under ADR 0010 the plugin no
+> longer drives git at all: the user's **native Claude Code** owns branch / commit
+> / push / PR and handles any environment/git checks itself (there is no plugin
+> `preflight.py`). The authoritative description of what Code verifies lives in the
+> repo (`project-a-skills/docs/AGENT_GUIDE.md`); `references/preflight-checklist.md`
+> is just a pointer to it (ADR 0011).
 
 The only thing to settle up front is the **repo location**: read `repo_root` from
 the config (`<state-dir>/config.json`). If it's missing, ask the user where their
@@ -212,35 +224,39 @@ Files in the stash:
 
 For `type: remove`, only `draft.json` is needed.
 
-### Step 6 — Hand off to the user's Claude Code (Variant 1)
+### Step 6 — Hand off to the user's Claude Code (Variant 2, ADR 0010)
 
 You do **not** run git/`gh` and do **not** spawn anything — none of that works from
-the Cowork sandbox (§1.2 of the design). Instead you hand the user a ready prompt
-to run in **their own Claude Code**, which does the real pre-flight + git + PR.
+the Cowork sandbox. Under ADR 0010 the plugin delivers **content + intent**; the
+user's **native Claude Code owns git** (branch, commit, push, PR) and uses the one
+remaining repo-side primitive `place_draft.py` (pure FS placement + validation, no
+commit). Forward-slash, quoted paths only.
 
 1. Confirm the draft is stashed (Step 5): `SKILL.md` + `references/` (create/update)
    + `draft.json` are written under the state dir.
 2. Build the handoff prompt from `references/handoff-prompt.md`, substituting the
-   stash `draft.json` path and the `repo_root`. Present it to the user as a
+   stash `draft.json` path (`{DRAFT_MANIFEST}`) and the `repo_root` (`{REPO_ROOT}`)
+   as **forward-slash, quoted** absolute paths. Present it to the user as a
    copy-paste block, with plain instructions:
 
    > Almost done. To send this for review, open Claude Code in your ChatRevenue
-   > skills project and paste this in. It'll run the last steps and give you a
-   > review link:
+   > skills project and paste this in. It'll place the skill, run the final check,
+   > and give you a review link:
    >
    > ```
-   > <the handoff prompt, with DRAFT_MANIFEST=<stash>/draft.json and repo_root filled in>
+   > <the handoff prompt, with {DRAFT_MANIFEST} and {REPO_ROOT} filled in>
    > ```
 
-   Say "the last steps" / "a review link" — never "headless", "subprocess",
-   "branch", "commit", "PR".
-3. When the user comes back with the review link (the `pr_url` Claude Code prints),
+   Say "the final check" / "a review link" — never "branch", "commit", "PR".
+3. When the user comes back with the review link (the PR URL Claude Code prints),
    present it with the closing language from `references/user-dialog-phrases.md`,
    and move the stash folder from `drafts/` to `drafts/.archive/` (keep last 10).
 
-If the user reports that Claude Code stopped with a technical block, relay the
-guidance from `references/escalation-template.md` — but note the env failures now
-originate on the Claude Code side (its `preflight.py`), not here.
+If the user reports that Claude Code stopped with a problem, relay the guidance from
+`references/escalation-template.md` — but note that environment/git is now wholly
+Code's domain; the only failure you raise yourself is a local Cowork one (e.g. can't
+write the stash), and the one repo-side failure the user may relay is a draft that
+failed `cr-skills validate` (`VALIDATION_REPO_SIDE_FAILED`).
 
 ### Step 7 — Closing (after the user runs the handoff)
 
@@ -276,9 +292,9 @@ When the user only wants to browse:
   `references/user-dialog-phrases.md` when talking to the user.
 - Never invent a skill name. Either the user picks one, or you propose
   2-3 options matching `^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]?$`.
-- Never run `git`/`gh` or spawn anything yourself. Git/PR happens only in the
-  user's own Claude Code (Step 6), via the `agent_helpers`. You author + stash +
-  hand off.
+- Never run `git`/`gh` or spawn anything yourself. Git (branch/commit/push/PR)
+  happens only in the user's own Claude Code (Step 6), natively. You author +
+  stash + hand off content and intent.
 - Authored skill content (SKILL.md + references/) is English only.
 - On a Cowork-side error (e.g., can't write the stash), explain it plainly and
   stop. Environment/git failures surface on the Claude Code side — relay the
@@ -286,11 +302,14 @@ When the user only wants to browse:
 
 ## References
 
-- `references/preflight-checklist.md` — pre-flight bash steps + failure handling
-- `references/validation-rules.md` — v1 rules as a Cowork-side checklist
-- `references/branch-naming.md` — what the user sees during step 6, in plain language
-- `references/escalation-template.md` — the verbatim tech-problem template
-- `references/handoff-prompt.md` — the prompt passed to spawned Claude Code
-- `references/handoff-manifest.md` — JSON Schema for `draft.json`
+Translation layer (the plugin's own content):
+- `references/validation-rules.md` — Layer-A UX pre-filter (authoritative rules: repo `CONTRIBUTING.md`)
+- `references/branch-naming.md` — plain-language wrapper for what the user sees (patterns: repo `AGENT_GUIDE.md`)
+- `references/escalation-template.md` — plain-language tech-problem wrapper
 - `references/widget-archetypes.md` — the widget archetype library (Step 3 widget branch)
 - `references/user-dialog-phrases.md` — UX vocabulary
+
+Pointers to the repo (contract lives in `project-a-skills`, per ADR 0011):
+- `references/handoff-prompt.md` — intent + a pointer; the user pastes it into their own Claude Code
+- `references/handoff-manifest.md` — `draft.json` reminder (authoritative schema: repo `AGENT_GUIDE.md`)
+- `references/preflight-checklist.md` — pointer; env/git checks are Code's domain (repo `AGENT_GUIDE.md`)
