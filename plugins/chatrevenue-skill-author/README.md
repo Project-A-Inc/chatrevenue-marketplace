@@ -54,6 +54,29 @@ conversation. The same applies to worker skills
 on its own" and "how often", never about `executable`, intervals, or
 cron.
 
+## Prompt authoring
+
+Since 0.5.0 the plugin also helps change the **Knowledge Lake summary
+prompts** — how the Knowledge Lake summarizes deals, companies, contacts and
+their relationships. The `chatrevenue-prompt-author` skill handles it.
+
+**Prerequisite:** a local clone of the prompts project, connected to the
+Cowork project (Cowork: add the folder to the project). The skill finds it
+by itself; if no connected folder is the prompts project, or several are,
+it asks once to connect or pick it.
+
+**What the author sees:**
+
+```
+User: "Change how deals are summarized for chatrevenue-business."
+
+Plugin: [finds the prompts project, then walks the author through
+         looking at the current prompt, trying a change, and publishing it]
+```
+
+The process itself is described in the prompts project, not in this
+plugin — when that process or its tooling changes, this plugin does not.
+
 ## Install
 
 1. In Cowork: Customize → **+** Personal plugins → **Create plugin** →
