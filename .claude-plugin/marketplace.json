@@ -19,7 +19,7 @@
     },
     {
       "name": "chatrevenue-skill-author",
-      "description": "Guided skill authoring for non-technical ChatRevenue staff: dialog-driven create/update/remove of ChatRevenue agent skills, with all git and review machinery hidden.",
+      "description": "Guided skill authoring for non-technical ChatRevenue staff: dialog-driven create/update/remove of ChatRevenue agent skills, with all git and review machinery hidden. Also guided prompt authoring for Knowledge Lake summary prompts, routed to the prompts project's own process.",
       "author": {
         "name": "ChatRevenue"
       },
