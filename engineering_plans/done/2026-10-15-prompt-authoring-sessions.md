@@ -328,6 +328,8 @@ In every row: no file names, headings, paths or error text in the replies (Revie
 - [ ] **Step 1:** Push the branch; update the PR description with the AC1–AC3 evidence. The PR stays open.
 - [ ] **Step 2 (phase 4, after deploy approval):** merge only on Sasha's explicit "yes" (deploy = merge to `main`; Cowork installs from the marketplace's default branch). Then run Task 4 Step 3 rows A and B against the installed 0.5.0 if not already done, `git mv engineering_plans/ongoing/2026-10-15-prompt-authoring-sessions.md engineering_plans/done/` and commit `plan(prompt-authoring-sessions): ongoing → done`.
 
+**Deploy record:** 0.5.0 deployed by merging PR #14 (1e8cf15) to `main`; plan moved to `done/` in PR #15 (a7a346b). AC3 (manual Cowork check, Task 4 Step 3 rows A/B) not run; open.
+
 ---
 
 ## Self-review

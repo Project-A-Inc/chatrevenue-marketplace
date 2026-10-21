@@ -28,3 +28,4 @@ never editing the old one away.
 | [0009](0009-hide-the-plumbing-error-handling.md) | Plugin-wide error handling: try safe read-only workarounds silently, surface only real blockers in plain language (no technical autopsy) | accepted |
 | [0010](0010-cowork-delivers-content-code-owns-git.md) | Cowork delivers content + intent; the user's Claude Code owns git end-to-end (the plugin's git helpers are retired) | accepted |
 | [0011](0011-plugin-targets-repo-docs-translation-layer.md) | The skill-author plugin targets `project-a-skills` architecture docs as the single source of truth; the plugin is a plain-language translation layer (generalises 0010) | accepted |
+| [0012](0012-prompt-author-skill-only-routes.md) | The prompt-author skill only routes to the prompts project; it carries no translation layer (narrows 0011 for prompts) | accepted |
