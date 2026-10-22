@@ -16,10 +16,12 @@ authoritative validation rules (owned by the agent — see
 `nextcrm-agents` ADR 0009), or worker **enrolment** (the agent/UI, downstream of
 merge).
 
-The plugin ships **two skills**: `chatrevenue-skill-author` (the authoring flow,
-documented in the bulk of this reference) and `chatrevenue-analyze-chat` (a
+The plugin ships **three skills**: `chatrevenue-skill-author` (the authoring flow,
+documented in the bulk of this reference), `chatrevenue-analyze-chat` (a
 read-only skill for inspecting real agent conversations to decide what to author
-— see [§ Analyze-chat skill](#analyze-chat-skill-second-skill)).
+— see [§ Analyze-chat skill](#analyze-chat-skill-second-skill)) and
+`chatrevenue-prompt-author` (a routing skill for Knowledge Lake summary prompts —
+see [§ Prompt-author skill](#prompt-author-skill-third-skill)).
 
 ## Structure
 
@@ -172,6 +174,47 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
   `trace_dumps/`.
 - Design spec: `design_docs/2026-06-08-chatrevenue-analyze-chat-design.md`.
 
+## Prompt-author skill (third skill)
+
+`chatrevenue-prompt-author` (since plugin 0.5.0) helps an author change, review
+or try how the Knowledge Lake summarizes entities and relationships. It **only
+routes**: it holds no dialog vocabulary, rules, API shapes or handoff template.
+Everything a prompt-authoring session must know — dialog, steps, the calls that
+try a prompt on an index, credentials, shipping — lives in the prompts project
+(`project-a-kl-config`), so a process or API change there needs no plugin release
+([0012](../decisions/0012-prompt-author-skill-only-routes.md)).
+
+```
+plugins/chatrevenue-skill-author/skills/chatrevenue-prompt-author/
+  SKILL.md   four steps; no references/ directory
+```
+
+1. **Find the prompts project** among the folders connected to the session: the
+   one whose root has a `CLAUDE.md` with the heading `## Prompt authoring sessions`.
+   Exactly one → use it. Several or none → ask the author once, in plain words, to
+   connect or pick their prompts project folder, and do nothing else until they
+   answer. A folder with some other `CLAUDE.md` is not a candidate.
+2. **Read the route:** that `CLAUDE.md`, then the file its
+   `## Prompt authoring sessions` section names.
+3. **Follow that file.** It overrides anything this plugin says about prompts.
+4. **No file named, or the named file missing** → tell the author in plain words
+   that this folder is not the prompts project, and stop.
+
+The trigger names the Knowledge Lake and summary prompts and says agent skills
+belong to `chatrevenue-skill-author`, so "change how deals are summarized" does not
+collide with skill authoring. Hide the plumbing applies as in the other skills.
+
+**Contracts.**
+
+| | Counterparty | Kind / protocol | Shape | Auth | Errors | Versioning |
+|---|---|---|---|---|---|---|
+| Provides | Prompt authors (Cowork users) | Cowork skill | `chatrevenue-prompt-author`, triggered by its description (summary prompts of the Knowledge Lake: "change how deals are summarized", "the summary of this company is too long", "show me the prompt for contacts", "try a new prompt", "publish my prompt change", "summary prompts", and equivalents) | Cowork plugin install | missing or ambiguous project → one plain-words request to connect or pick it | plugin semver |
+| Consumes | `project-a-kl-config` (prompts project, local clone) | file in the repository | **E1** — `CLAUDE.md` at the repository root; under the heading `## Prompt authoring sessions` it names the authoring reference, which is the whole authoring contract. The skill relies only on that file and that heading. | read access to a connected local clone | missing file, heading or named file → "this folder is not the prompts project", stop | heading text and file name stable; the content behind them changes freely |
+
+- Prerequisite for authors: a local clone of the prompts project connected to the
+  Cowork project (plugin README, section *Prompt authoring*).
+- Design spec: `design_docs/prompt-authoring-sessions-design.md`.
+
 ## Constraints & decisions
 
 - **Hidden vocabulary.** The plugin never says branch / commit / push / PR /
@@ -220,7 +263,9 @@ plugins/chatrevenue-skill-author/skills/chatrevenue-analyze-chat/
   content+intent; Code owns git natively; plugin git-helpers retired),
   [0011](../decisions/0011-plugin-targets-repo-docs-translation-layer.md) (plugin
   targets `project-a-skills` docs as the single source of truth; plugin is a
-  plain-language translation layer that embeds no contract).
+  plain-language translation layer that embeds no contract),
+  [0012](../decisions/0012-prompt-author-skill-only-routes.md) (the prompt-author
+  skill only routes to the prompts project and carries no translation layer).
 - Design specs: `design_docs/2026-05-27-chatrevenue-skill-author-design.md`
   (worker support in §1.1); `design_docs/2026-06-11-skill-author-widget-creation-design.md`
   (dashboard widget authoring).
